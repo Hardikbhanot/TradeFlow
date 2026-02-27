@@ -7,6 +7,7 @@ import com.tradeflow.wallet_service.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.tradeflow.wallet_service.exception.WalletNotFoundException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,10 +23,9 @@ public class WalletService {
 
     @Transactional
     public Wallet addMoney(Long userId, BigDecimal amount) {
-        // 1. Find the wallet (or throw error)
-        // Note: You'll need to add 'Optional<Wallet> findByUserId(Long userId)' in WalletRepository
+        // 1. Fetch Wallet
         Wallet wallet = walletRepository.findByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Wallet not found for User ID: " + userId));
+            .orElseThrow(() -> new WalletNotFoundException(userId));
 
         // 2. Update balance
         wallet.setBalance(wallet.getBalance().add(amount));

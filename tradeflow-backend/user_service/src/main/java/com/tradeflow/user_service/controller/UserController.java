@@ -14,13 +14,21 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-    // This endpoint will save a user to your Neon Database
+    // saves user to neon db
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
-        return userRepository.save(user);
-    }
+    User savedUser = userRepository.save(user);
+    Map<String, Object> request = new HashMap<>();
+    request.put("userId", savedUser.getId());
+    request.put("balance", 0.0); 
 
-    // This endpoint lets you check if the DB connection is working
+    walletClient.createWallet(request);
+    
+        return savedUser;
+    }
+    
+
+    // check db connection
     @GetMapping("/all")
     public List<User> getAllUsers() {
         return userRepository.findAll();

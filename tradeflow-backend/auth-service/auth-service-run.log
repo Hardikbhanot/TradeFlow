@@ -1,0 +1,95 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/opt/homebrew/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------< com.tradeflow:authorization-service >-----------------
+[INFO] Building authorization-service 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.3:run (default-cli) > test-compile @ authorization-service >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ authorization-service ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ authorization-service ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ authorization-service ---
+[INFO] skip non existing resourceDirectory /Volumes/Work/TradeFlow/tradeflow-backend/auth-service/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ authorization-service ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.3:run (default-cli) < test-compile @ authorization-service <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.3:run (default-cli) @ authorization-service ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.3)
+
+2026-02-28T00:02:32.817+05:30  INFO 55989 --- [auth-service] [           main] c.t.a.AuthorizationServiceApplication    : Starting AuthorizationServiceApplication using Java 24.0.1 with PID 55989 (/Volumes/Work/TradeFlow/tradeflow-backend/auth-service/target/classes started by hardik_bhanot in /Volumes/Work/TradeFlow/tradeflow-backend/auth-service)
+2026-02-28T00:02:32.818+05:30  INFO 55989 --- [auth-service] [           main] c.t.a.AuthorizationServiceApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-02-28T00:02:33.060+05:30  INFO 55989 --- [auth-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=432a5998-67e8-3ef5-b0ce-f8cb07b9cd17
+2026-02-28T00:02:33.133+05:30  INFO 55989 --- [auth-service] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 9000 (http)
+2026-02-28T00:02:33.138+05:30  INFO 55989 --- [auth-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-02-28T00:02:33.138+05:30  INFO 55989 --- [auth-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-02-28T00:02:33.154+05:30  INFO 55989 --- [auth-service] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 322 ms
+2026-02-28T00:02:33.220+05:30  WARN 55989 --- [auth-service] [           main] o.s.security.core.userdetails.User       : User.withDefaultPasswordEncoder() is considered unsafe for production and is only intended for sample applications.
+2026-02-28T00:02:33.297+05:30  INFO 55989 --- [auth-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-02-28T00:02:33.620+05:30 DEBUG 55989 --- [auth-service] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, AuthorizationServerContextFilter, HeaderWriterFilter, CsrfFilter, OidcLogoutEndpointFilter, LogoutFilter, OAuth2AuthorizationServerMetadataEndpointFilter, OAuth2AuthorizationCodeRequestValidatingFilter, OidcProviderConfigurationEndpointFilter, NimbusJwkSetEndpointFilter, OAuth2ProtectedResourceMetadataFilter, OAuth2ClientAuthenticationFilter, UsernamePasswordAuthenticationFilter, DefaultResourcesFilter, DefaultLoginPageGeneratingFilter, DefaultLogoutPageGeneratingFilter, BearerTokenAuthenticationFilter, AuthenticationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, ExceptionTranslationFilter, AuthorizationFilter, OAuth2AuthorizationEndpointFilter, OAuth2TokenEndpointFilter, OAuth2TokenIntrospectionEndpointFilter, OAuth2TokenRevocationEndpointFilter, OidcUserInfoEndpointFilter
+2026-02-28T00:02:33.739+05:30  INFO 55989 --- [auth-service] [           main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestClient.
+2026-02-28T00:02:33.747+05:30  WARN 55989 --- [auth-service] [           main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-02-28T00:02:33.755+05:30  INFO 55989 --- [auth-service] [           main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+2026-02-28T00:02:33.761+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+2026-02-28T00:02:33.762+05:30  INFO 55989 --- [auth-service] [           main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+2026-02-28T00:02:33.764+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+2026-02-28T00:02:33.870+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+2026-02-28T00:02:33.870+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-02-28T00:02:33.871+05:30  INFO 55989 --- [auth-service] [           main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-02-28T00:02:33.871+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1772217153871 with initial instances count: 4
+2026-02-28T00:02:33.872+05:30  INFO 55989 --- [auth-service] [           main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application AUTH-SERVICE with eureka with status UP
+2026-02-28T00:02:33.872+05:30  INFO 55989 --- [auth-service] [           main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772217153872, current=UP, previous=STARTING]
+2026-02-28T00:02:33.872+05:30  INFO 55989 --- [auth-service] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T00:02:33.876+05:30  INFO 55989 --- [auth-service] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 9000 (http) with context path '/'
+2026-02-28T00:02:33.876+05:30  INFO 55989 --- [auth-service] [           main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 9000
+2026-02-28T00:02:33.881+05:30  INFO 55989 --- [auth-service] [           main] c.t.a.AuthorizationServiceApplication    : Started AuthorizationServiceApplication in 1.186 seconds (process running for 1.363)
+2026-02-28T00:02:33.885+05:30  INFO 55989 --- [auth-service] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T00:04:07.329+05:30  INFO 55989 --- [auth-service] [nio-9000-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-02-28T00:04:07.330+05:30  INFO 55989 --- [auth-service] [nio-9000-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-02-28T00:04:07.331+05:30  INFO 55989 --- [auth-service] [nio-9000-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-02-28T00:04:07.333+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-1] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:04:52.532+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:04:52.621+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] ClientCredentialsAuthenticationValidator : Invalid request: requested scope is not allowed for registered client 'tradeflow-client-id'
+2026-02-28T00:04:52.621+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] o.s.s.authentication.ProviderManager     : Authentication failed with provider OAuth2ClientCredentialsAuthenticationProvider since null
+2026-02-28T00:04:52.625+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] .s.a.DefaultAuthenticationEventPublisher : No event was found for the exception org.springframework.security.oauth2.core.OAuth2AuthenticationException
+2026-02-28T00:04:52.625+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] o.s.s.authentication.ProviderManager     : Denying authentication since all attempted providers failed
+2026-02-28T00:05:19.080+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-5] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:07:33.774+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T00:07:59.442+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-6] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:07:59.533+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-6] ClientCredentialsAuthenticationValidator : Invalid request: requested scope is not allowed for registered client 'tradeflow-client-id'
+2026-02-28T00:07:59.533+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-6] o.s.s.authentication.ProviderManager     : Authentication failed with provider OAuth2ClientCredentialsAuthenticationProvider since null
+2026-02-28T00:07:59.533+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-6] .s.a.DefaultAuthenticationEventPublisher : No event was found for the exception org.springframework.security.oauth2.core.OAuth2AuthenticationException
+2026-02-28T00:07:59.533+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-6] o.s.s.authentication.ProviderManager     : Denying authentication since all attempted providers failed
+2026-02-28T00:09:30.919+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-8] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:09:40.734+05:30 DEBUG 55989 --- [auth-service] [io-9000-exec-10] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:09:52.177+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-3] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:09:59.638+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:10:09.992+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-4] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
