@@ -93,3 +93,4 @@ WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
 2026-02-28T00:09:52.177+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-3] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
 2026-02-28T00:09:59.638+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
 2026-02-28T00:10:09.992+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-4] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
+2026-02-28T00:12:33.786+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
