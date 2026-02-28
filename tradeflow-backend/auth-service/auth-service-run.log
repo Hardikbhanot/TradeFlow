@@ -94,3 +94,97 @@ WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
 2026-02-28T00:09:59.638+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-2] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
 2026-02-28T00:10:09.992+05:30 DEBUG 55989 --- [auth-service] [nio-9000-exec-4] o.s.security.web.FilterChainProxy        : Securing POST /oauth2/token
 2026-02-28T00:12:33.786+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T04:09:22.102+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T04:09:22.105+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T04:09:22.115+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T04:50:06.396+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T08:00:20.179+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T08:00:20.180+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T08:00:20.187+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T12:01:51.927+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T12:01:51.927+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T12:01:51.933+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T12:28:51.521+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T12:28:51.521+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T12:28:51.525+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T12:31:00.416+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T12:49:22.270+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T12:49:22.271+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T12:49:22.277+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T13:29:17.551+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T13:29:17.552+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T13:29:17.559+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T13:50:13.418+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T13:50:13.419+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T13:50:13.423+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T14:11:18.311+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T14:11:18.313+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T14:11:18.317+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T14:13:02.144+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T14:30:13.456+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T14:30:13.456+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T14:30:13.458+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T16:26:33.502+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T16:31:33.510+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T16:36:33.520+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T16:41:33.524+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T16:46:33.537+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T16:51:33.546+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T16:56:33.561+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:01:33.573+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:06:33.587+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:11:33.600+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:16:33.619+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:21:33.631+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:26:33.638+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:31:33.650+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:36:33.656+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:41:33.666+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:46:33.679+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:51:33.692+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T17:56:33.706+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:01:33.715+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:06:33.730+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:11:33.739+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:16:33.755+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:21:33.766+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:26:33.780+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:31:33.789+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:36:33.802+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:41:33.810+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T18:46:33.823+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T20:32:12.560+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T20:32:12.561+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T20:32:12.565+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T20:49:22.609+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T22:09:11.790+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T22:09:11.791+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T22:09:11.796+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T22:20:02.524+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - Re-registering apps/AUTH-SERVICE
+2026-02-28T22:20:02.526+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T22:20:02.532+05:30  INFO 55989 --- [auth-service] [beatExecutor-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T22:20:28.797+05:30  INFO 55989 --- [auth-service] [rap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-02-28T22:21:30.973+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] o.s.c.n.e.s.EurekaServiceRegistry        : Unregistering application AUTH-SERVICE with eureka with status DOWN
+2026-02-28T22:21:30.975+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772297490975, current=DOWN, previous=UP]
+2026-02-28T22:21:30.975+05:30  INFO 55989 --- [auth-service] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000: registering service...
+2026-02-28T22:21:30.981+05:30  INFO 55989 --- [auth-service] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - registration status: 204
+2026-02-28T22:21:30.985+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-02-28T22:21:30.990+05:30  INFO 55989 --- [auth-service] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-02-28T22:21:30.995+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] com.netflix.discovery.DiscoveryClient    : Shutting down DiscoveryClient ...
+2026-02-28T22:21:34.001+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] com.netflix.discovery.DiscoveryClient    : Unregistering ...
+2026-02-28T22:21:34.001+05:30  WARN 55989 --- [auth-service] [coveryClient-%d] c.netflix.discovery.TimedSupervisorTask  : task supervisor shutting down, can't accept the task
+2026-02-28T22:21:34.007+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_AUTH-SERVICE/192.168.1.7:auth-service:9000 - deregister  status: 200
+2026-02-28T22:21:34.008+05:30  INFO 55989 --- [auth-service] [ionShutdownHook] com.netflix.discovery.DiscoveryClient    : Completed shut down of DiscoveryClient
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  22:19 h
+[INFO] Finished at: 2026-02-28T22:21:34+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.3:run (default-cli) on project authorization-service: Process terminated with exit code: 143 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

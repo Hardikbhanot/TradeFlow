@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 import com.tradeflow.wallet_service.service.WalletService;
 import com.tradeflow.wallet_service.service.IdempotencyService;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+
 @RestController
 @RequestMapping("/api/v1/wallets")
 public class WalletController {
@@ -37,11 +40,16 @@ public class WalletController {
 
     @PostMapping("/add")
     public ResponseEntity<?> addMoney(
+    @AuthenticationPrincipal Jwt jwt,
     @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
-    @RequestParam Long userId, 
+    // @RequestParam Long userId, 
     @RequestParam BigDecimal amount) {
 
-    
+    Long userId = jwt.getClaim("userId");
+    // if (!userIdFromToken.equals(userId)) {
+    //     return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to add money to this wallet.");
+    // }
+
     if (idempotencyKey != null) {
         Optional<String> existingResponse = idempotencyService.getResponse(idempotencyKey);
         if (existingResponse.isPresent()) {
@@ -49,7 +57,7 @@ public class WalletController {
         }
     }
 
-    Wallet updatedWallet = walletService.addMoney(userId, amount);
+    Wallet updatedWallet = walletService.addMoney(userId,amount);
 
     if (idempotencyKey != null) {
         idempotencyService.saveResponse(idempotencyKey, "SUCCESS");
@@ -67,5 +75,10 @@ public class WalletController {
     public Wallet getWalletByUserId(@PathVariable Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found for user: " + userId));
+    }
+    
+    @GetMapping("/token-details")
+    public Map<String, Object> getTokenDetails(@AuthenticationPrincipal Jwt jwt) {
+        return jwt.getClaims();
     }
 }
