@@ -43,4 +43,29 @@ public class WalletService {
 
         return wallet;
     }
+
+    @Transactional
+    public boolean reserveFunds(Long userId, BigDecimal amount, Long orderId) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+            .orElseThrow(() -> new WalletNotFoundException(userId));
+
+        if (wallet.getBalance().compareTo(amount) >= 0) {
+            wallet.setBalance(wallet.getBalance().subtract(amount));
+            walletRepository.save(wallet);
+
+            Transaction tx = new Transaction();
+            tx.setWalletId(wallet.getId());
+            tx.setAmount(amount);
+            tx.setType("DEBIT"); 
+            tx.setStatus("SUCCESS"); 
+            tx.setTimestamp(LocalDateTime.now());
+            
+            tx.setReferenceId(orderId.toString()); 
+            
+            transactionRepository.save(tx);
+
+            return true; 
+        }
+        return false;
+    }
 }

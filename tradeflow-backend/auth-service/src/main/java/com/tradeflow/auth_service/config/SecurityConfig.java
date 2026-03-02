@@ -14,7 +14,6 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-// Removed unused import
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
@@ -84,7 +83,7 @@ public class SecurityConfig {
                 .redirectUri("http://127.0.0.1:8080/login/oauth2/code/tradeflow-client-oidc")
                 .scope("wallet.read")
                 .scope("wallet.write")
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).requireProofKey(false).build())
                 .build();
 
         return new InMemoryRegisteredClientRepository(registeredClient);
@@ -124,11 +123,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer(
+            com.tradeflow.auth_service.repository.UserRepository userRepository) {
+        
         return (context) -> {
             if (context.getTokenType().getValue().equals("access_token")) {
-                context.getClaims().claim("userId", 1L);
-                context.getClaims().claim("role", "USER");
+                String username = context.getPrincipal().getName();
+                
+                userRepository.findByUsername(username).ifPresent(user -> {
+                    context.getClaims().claim("userId", user.getId());
+                    context.getClaims().claim("role", user.getRole());
+                });
             }
         };
     }

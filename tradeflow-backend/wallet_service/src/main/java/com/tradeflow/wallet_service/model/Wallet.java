@@ -20,4 +20,8 @@ public class Wallet {
     private Long userId;
 
     private BigDecimal balance;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version = 0L;
 }

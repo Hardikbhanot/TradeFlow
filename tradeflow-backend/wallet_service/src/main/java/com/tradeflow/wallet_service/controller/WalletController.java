@@ -37,7 +37,12 @@ public class WalletController {
     wallet.setBalance(new BigDecimal(payload.get("balance").toString()));
     return walletRepository.save(wallet);
     }
-
+    @GetMapping
+    public String getWallet(@AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
+        
+        return "Access Granted! You securely reached the Wallet Service. Your Database User ID is: " + userId;
+    }
     @PostMapping("/add")
     public ResponseEntity<?> addMoney(
     @AuthenticationPrincipal Jwt jwt,

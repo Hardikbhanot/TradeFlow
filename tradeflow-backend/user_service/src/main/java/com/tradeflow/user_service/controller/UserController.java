@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.tradeflow.user_service.client.WalletClient;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -14,19 +18,21 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private WalletClient walletClient;
+
     // saves user to neon db
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
-    User savedUser = userRepository.save(user);
-    Map<String, Object> request = new HashMap<>();
-    request.put("userId", savedUser.getId());
-    request.put("balance", 0.0); 
+        User savedUser = userRepository.save(user);
+        Map<String, Object> request = new HashMap<>();
+        request.put("userId", savedUser.getId());
+        request.put("balance", 0.0);
 
-    walletClient.createWallet(request);
-    
+        walletClient.createWallet(request);
+
         return savedUser;
     }
-    
 
     // check db connection
     @GetMapping("/all")
