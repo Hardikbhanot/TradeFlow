@@ -1,6 +1,7 @@
 package com.tradeflow.order_service.entity;
 
 import com.tradeflow.order_service.enums.OrderStatus;
+import com.tradeflow.order_service.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,4 +34,9 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
+    
+    @Enumerated(EnumType.STRING)
+private OrderType orderType; 
+
+private String exchange; 
 }

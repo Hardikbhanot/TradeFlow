@@ -12,4 +12,5 @@ public class OrderCreatedEvent {
     private Long orderId;
     private Long userId;
     private BigDecimal totalAmount; // quantity * pricePerUnit
+    private String orderType; // "BUY" or "SELL"
 }

@@ -22,7 +22,10 @@ public class OrderController {
                 request.getUserId(),
                 request.getSymbol(),
                 request.getQuantity(),
-                request.getPricePerUnit());
+                request.getPricePerUnit(),
+                request.getExchange(), 
+                request.getOrderType()
+        );
 
         return ResponseEntity.ok(newOrder);
     }
