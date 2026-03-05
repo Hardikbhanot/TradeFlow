@@ -23,10 +23,10 @@ public class PortfolioController {
 
     @GetMapping("/check-holdings")
     public ResponseEntity<Boolean> checkHoldings(
-        @RequestParam Long userId,
-        @RequestParam String symbol,
-        @RequestParam String exchange,
-        @RequestParam Integer quantity) {
+            @RequestParam("userId") Long userId,
+            @RequestParam("symbol") String symbol,
+            @RequestParam(value = "exchange", required = false) String exchange,
+            @RequestParam("quantity") Integer quantity) {
         return ResponseEntity.ok(portfolioService.hasEnoughShares(userId, symbol, exchange, quantity));
     }
 }

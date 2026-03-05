@@ -4,12 +4,12 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "portfolio-service") 
+@FeignClient(name = "portfolio-service")
 public interface PortfolioClient {
     @GetMapping("/api/v1/portfolio/check-holdings")
     boolean hasEnoughShares(
-            @RequestParam Long userId,
-            @RequestParam String symbol,
-            @RequestParam String exchange,
-            @RequestParam Integer quantity);
+            @RequestParam("userId") Long userId,
+            @RequestParam("symbol") String symbol,
+            @RequestParam(value = "exchange", required = false) String exchange,
+            @RequestParam("quantity") Integer quantity);
 }

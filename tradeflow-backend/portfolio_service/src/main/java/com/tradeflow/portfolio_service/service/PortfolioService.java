@@ -27,7 +27,8 @@ public class PortfolioService {
     }
 
     public boolean hasEnoughShares(Long userId, String symbol, String exchange, Integer quantityToSell) {
-        return holdingRepository.findByUserIdAndSymbolAndExchange(userId, symbol, exchange)
+        String activeExchange = (exchange != null && !exchange.isEmpty()) ? exchange : "NSE";
+        return holdingRepository.findByUserIdAndSymbolAndExchange(userId, symbol, activeExchange)
                 .map(holding -> holding.getTotalQuantity() >= quantityToSell)
                 .orElse(false);
     }
@@ -47,12 +48,13 @@ public class PortfolioService {
     private void handleBuy(OrderCompletedEvent event, Optional<Holding> existingHolding) {
         if (existingHolding.isPresent()) {
             Holding holding = existingHolding.get();
-            
+
             // Calculate new Average Price: (Total Cost + New Cost) / Total Quantity
-            BigDecimal currentTotalCost = holding.getAvgPrice().multiply(BigDecimal.valueOf(holding.getTotalQuantity()));
+            BigDecimal currentTotalCost = holding.getAvgPrice()
+                    .multiply(BigDecimal.valueOf(holding.getTotalQuantity()));
             BigDecimal newOrderCost = event.getPrice().multiply(event.getQuantity());
             int totalQuantity = holding.getTotalQuantity() + event.getQuantity().intValue();
-            
+
             BigDecimal newAvgPrice = currentTotalCost.add(newOrderCost)
                     .divide(BigDecimal.valueOf(totalQuantity), 2, RoundingMode.HALF_UP);
 
@@ -68,7 +70,7 @@ public class PortfolioService {
             newHolding.setExchange(event.getExchange());
             newHolding.setTotalQuantity(event.getQuantity().intValue());
             newHolding.setAvgPrice(event.getPrice());
-            
+
             holdingRepository.save(newHolding);
             log.info("Created new holding record for {}", event.getSymbol());
         }
@@ -77,7 +79,7 @@ public class PortfolioService {
     private void handleSell(OrderCompletedEvent event, Optional<Holding> existingHolding) {
         existingHolding.ifPresentOrElse(holding -> {
             int remainingQuantity = holding.getTotalQuantity() - event.getQuantity().intValue();
-            
+
             if (remainingQuantity <= 0) {
                 holdingRepository.delete(holding);
                 log.info("Holding for {} fully liquidated and removed.", event.getSymbol());
