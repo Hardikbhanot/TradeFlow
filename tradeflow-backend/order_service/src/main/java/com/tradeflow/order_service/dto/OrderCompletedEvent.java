@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
+import com.tradeflow.order_service.enums.OrderSide; 
 
 @Data
 @AllArgsConstructor
@@ -13,7 +14,7 @@ public class OrderCompletedEvent {
     private Long userId;
     private String symbol;
     private String exchange;
-    private Integer quantity;
-    private BigDecimal price;
-    private String orderType;
+    private BigDecimal quantity; 
+    private BigDecimal price;    // The ACTUAL execution price
+    private OrderSide side;      // Changed from String "orderType"
 }

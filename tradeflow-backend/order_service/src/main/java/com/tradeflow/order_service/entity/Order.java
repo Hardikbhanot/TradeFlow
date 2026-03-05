@@ -1,42 +1,36 @@
 package com.tradeflow.order_service.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import com.tradeflow.order_service.enums.OrderSide;
 import com.tradeflow.order_service.enums.OrderStatus;
 import com.tradeflow.order_service.enums.OrderType;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "orders")
-@Data // Lombok generates getters, setters, toString, etc.
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class Order {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
     private Long userId;
-
-    @Column(nullable = false)
-    private String symbol; 
-
-    @Column(nullable = false)
-    private BigDecimal quantity;
-
-    @Column(nullable = false)
-    private BigDecimal pricePerUnit;
+    private String symbol;
+    private Integer quantity;
+    private String exchange;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
-    
-    @Enumerated(EnumType.STRING)
-private OrderType orderType; 
+    private OrderSide side;
 
-private String exchange; 
+    @Enumerated(EnumType.STRING)
+    private OrderType type; // (MARKET/LIMIT)
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
+    // private BigDecimal pricePerUnit;
+
+    private BigDecimal triggerPrice;
+    private BigDecimal executedPrice;
 }

@@ -18,14 +18,7 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<Order> placeOrder(@RequestBody OrderRequest request) {
-        Order newOrder = orderService.placeOrder(
-                request.getUserId(),
-                request.getSymbol(),
-                request.getQuantity(),
-                request.getPricePerUnit(),
-                request.getExchange(), 
-                request.getOrderType()
-        );
+        Order newOrder = orderService.placeOrder(request);
 
         return ResponseEntity.ok(newOrder);
     }

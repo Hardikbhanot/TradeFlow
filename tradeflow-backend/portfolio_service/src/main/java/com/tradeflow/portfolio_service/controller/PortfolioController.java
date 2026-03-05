@@ -27,6 +27,6 @@ public class PortfolioController {
         @RequestParam String symbol,
         @RequestParam String exchange,
         @RequestParam Integer quantity) {
-        return ResponseEntity.ok(portfolioService.canSell(userId, symbol, exchange, quantity));
+        return ResponseEntity.ok(portfolioService.hasEnoughShares(userId, symbol, exchange, quantity));
     }
 }
