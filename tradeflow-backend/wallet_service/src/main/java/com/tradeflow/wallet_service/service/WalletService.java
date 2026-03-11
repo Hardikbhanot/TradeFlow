@@ -21,11 +21,19 @@ public class WalletService {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    public Wallet getOrCreateWallet(Long userId) {
+        return walletRepository.findByUserId(userId).orElseGet(() -> {
+            Wallet newWallet = new Wallet();
+            newWallet.setUserId(userId);
+            newWallet.setBalance(BigDecimal.ZERO);
+            return walletRepository.save(newWallet);
+        });
+    }
+
     @Transactional
     public Wallet addMoney(Long userId, BigDecimal amount) {
-        // 1. Fetch Wallet
-        Wallet wallet = walletRepository.findByUserId(userId)
-            .orElseThrow(() -> new WalletNotFoundException(userId));
+        // 1. Fetch or Create Wallet
+        Wallet wallet = getOrCreateWallet(userId);
 
         // 2. Update balance
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -38,7 +46,7 @@ public class WalletService {
         tx.setType("CREDIT");
         tx.setStatus("SUCCESS");
         tx.setTimestamp(LocalDateTime.now());
-        
+
         transactionRepository.save(tx);
 
         return wallet;
@@ -46,8 +54,7 @@ public class WalletService {
 
     @Transactional
     public boolean reserveFunds(Long userId, BigDecimal amount, Long orderId) {
-        Wallet wallet = walletRepository.findByUserId(userId)
-            .orElseThrow(() -> new WalletNotFoundException(userId));
+        Wallet wallet = getOrCreateWallet(userId);
 
         if (wallet.getBalance().compareTo(amount) >= 0) {
             wallet.setBalance(wallet.getBalance().subtract(amount));
@@ -56,15 +63,15 @@ public class WalletService {
             Transaction tx = new Transaction();
             tx.setWalletId(wallet.getId());
             tx.setAmount(amount);
-            tx.setType("DEBIT"); 
-            tx.setStatus("SUCCESS"); 
+            tx.setType("DEBIT");
+            tx.setStatus("SUCCESS");
             tx.setTimestamp(LocalDateTime.now());
-            
-            tx.setReferenceId(orderId.toString()); 
-            
+
+            tx.setReferenceId(orderId.toString());
+
             transactionRepository.save(tx);
 
-            return true; 
+            return true;
         }
         return false;
     }

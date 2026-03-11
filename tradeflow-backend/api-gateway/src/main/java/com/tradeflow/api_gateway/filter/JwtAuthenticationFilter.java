@@ -57,6 +57,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 String userId = claims.getSubject();
 
+                // 🔥 Phase 5 Part 2: Gateway Security Sub-Filter 🔥
+                // Ensure users cannot access other users' specific path resources
+                String path = request.getRequestURI();
+                if (path.matches(".*/portfolio/\\d+") || path.matches(".*/wallets/user/\\d+")) {
+                    String[] pathSegments = path.split("/");
+                    String resourceId = pathSegments[pathSegments.length - 1];
+
+                    if (!resourceId.equals(userId)) {
+                        onError(response,
+                                "JWT Subject mismatch: You are not authorized to access resource ID " + resourceId);
+                        return;
+                    }
+                }
+
                 // Create a request wrapper to add the X-User-Id header dynamically
                 HttpServletRequestWrapper modifiedRequest = new HttpServletRequestWrapper(request) {
                     @Override

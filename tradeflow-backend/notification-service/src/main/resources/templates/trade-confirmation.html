@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Trade Confirmation</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #2c3e50;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .trade-details {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .trade-details span {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .trade-details .label {
+            font-weight: bold;
+            color: #666;
+        }
+        .footer {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>TradeFlow Security Alert</h2>
+        </div>
+        <div class="content">
+            <h3>Hello,</h3>
+            <p>Your recent order has been successfully executed on the TradeFlow platform. Here is a summary of your transaction:</p>
+            
+            <div class="trade-details">
+                <span><span class="label">Action:</span> <span th:text="${type}">BUY</span></span>
+                <span><span class="label">Symbol:</span> <span th:text="${symbol}">TICKER</span></span>
+                <span><span class="label">Quantity:</span> <span th:text="${quantity}">0</span></span>
+                <span><span class="label">Price:</span> <span th:text="${price}">$0.00</span></span>
+            </div>
+
+            <p style="color: #555; font-style: italic;" th:text="${message}">We successfully processed your transaction.</p>
+
+            <div style="text-align: center;">
+                <a href="https://tradeflow.tech/portfolio" class="action-button">View Transaction in Portfolio</a>
+            </div>
+        </div>
+        <div class="footer">
+            &copy; 2026 TradeFlow Inc. All rights reserved.<br>
+            If you did not authorize this trade, please contact support immediately.
+        </div>
+    </div>
+</body>
+</html>

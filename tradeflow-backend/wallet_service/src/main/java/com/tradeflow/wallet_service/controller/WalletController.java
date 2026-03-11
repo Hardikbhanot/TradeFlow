@@ -69,7 +69,6 @@ public class WalletController {
 
     @GetMapping("/user/{userId}")
     public Wallet getWalletByUserId(@PathVariable Long userId) {
-        return walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found for user: " + userId));
+        return walletService.getOrCreateWallet(userId);
     }
 }

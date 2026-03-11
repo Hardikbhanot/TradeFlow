@@ -5,6 +5,7 @@ import com.tradeflow.order_service.dto.FundsRejectedEvent;
 import com.tradeflow.order_service.dto.FundsReservedEvent;
 import com.tradeflow.order_service.dto.OrderCompletedEvent;
 import com.tradeflow.order_service.dto.WalletUpdateEvent;
+import com.tradeflow.order_service.dto.NotificationEvent;
 import com.tradeflow.order_service.entity.Order;
 import com.tradeflow.order_service.enums.OrderStatus;
 import com.tradeflow.order_service.enums.OrderSide;
@@ -73,6 +74,21 @@ public class OrderEventListener {
 
             kafkaTemplate.send("order-completed-topic", completedEvent);
             log.info("📢 OrderCompletedEvent published for Portfolio: {}", order.getSymbol());
+
+            // 📢 4. Notify Notification Service to dispatch HTML Confirmation Email
+            String tradeMessage = String.format("Successfully executed %s order for %d shares of %s at $%.2f",
+                    order.getSide().name(), order.getQuantity(), order.getSymbol(), effectivePrice);
+
+            NotificationEvent notificationEvent = new NotificationEvent(
+                    order.getUserId(),
+                    order.getSide().name(),
+                    tradeMessage,
+                    order.getSymbol(),
+                    order.getQuantity(),
+                    effectivePrice.doubleValue());
+
+            kafkaTemplate.send("notification-topic", notificationEvent);
+            log.info("📧 NotificationEvent published for Email Dispatch: User ID {}", order.getUserId());
         });
     }
 
