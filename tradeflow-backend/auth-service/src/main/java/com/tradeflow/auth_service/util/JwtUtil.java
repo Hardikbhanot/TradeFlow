@@ -22,9 +22,10 @@ public class JwtUtil {
     // 24 Hours in milliseconds
     private static final long EXPIRATION_TIME = 86400000;
 
-    public String generateToken(String userId, String username) {
+    public String generateToken(String userId, String username, String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("name", username); // As requested in the structure
+        claims.put("email", email);
 
         return Jwts.builder()
                 .setClaims(claims)

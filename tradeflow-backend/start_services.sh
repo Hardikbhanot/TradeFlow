@@ -13,6 +13,7 @@ SERVICES=(
     "market_service"
     "order_service"
     "portfolio_service"
+    "notification-service"
 )
 
 echo "🚀 Launching all microservices in separate Terminal windows from: $BASE_DIR"
