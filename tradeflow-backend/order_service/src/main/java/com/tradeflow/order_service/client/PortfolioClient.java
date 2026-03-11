@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface PortfolioClient {
     @GetMapping("/api/v1/portfolio/check-holdings")
     boolean hasEnoughShares(
-            @RequestParam("userId") Long userId,
+            @org.springframework.web.bind.annotation.RequestHeader("X-User-Id") Long userId,
             @RequestParam("symbol") String symbol,
             @RequestParam(value = "exchange", required = false) String exchange,
             @RequestParam("quantity") Integer quantity);

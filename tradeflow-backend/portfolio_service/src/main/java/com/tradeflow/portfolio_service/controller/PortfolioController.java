@@ -16,14 +16,14 @@ public class PortfolioController {
         this.portfolioService = portfolioService;
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<Holding>> getDashboard(@PathVariable Long userId) {
+    @GetMapping
+    public ResponseEntity<List<Holding>> getDashboard(@RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(portfolioService.getUserHoldings(userId));
     }
 
     @GetMapping("/check-holdings")
     public ResponseEntity<Boolean> checkHoldings(
-            @RequestParam("userId") Long userId,
+            @RequestHeader("X-User-Id") Long userId,
             @RequestParam("symbol") String symbol,
             @RequestParam(value = "exchange", required = false) String exchange,
             @RequestParam("quantity") Integer quantity) {

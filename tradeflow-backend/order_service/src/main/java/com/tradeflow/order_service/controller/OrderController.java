@@ -17,7 +17,14 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> placeOrder(@RequestBody OrderRequest request) {
+    public ResponseEntity<Order> placeOrder(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody OrderRequest request) {
+
+        // Securely override whatever they sent in the JSON with the Gateway's decrypted
+        // token ID
+        request.setUserId(userId);
+
         Order newOrder = orderService.placeOrder(request);
 
         return ResponseEntity.ok(newOrder);
