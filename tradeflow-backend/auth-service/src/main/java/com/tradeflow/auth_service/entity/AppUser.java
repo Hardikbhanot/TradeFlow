@@ -19,7 +19,7 @@ public class AppUser {
     @Column(nullable = false)
     private String role;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     public AppUser() {

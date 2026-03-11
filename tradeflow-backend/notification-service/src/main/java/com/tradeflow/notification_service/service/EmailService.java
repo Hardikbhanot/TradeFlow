@@ -52,9 +52,9 @@ public class EmailService {
                 recipientEmail = authClient.getUserEmailById(event.getUserId());
                 log.info("Successfully fetched email {} for UserId {}", recipientEmail, event.getUserId());
             } catch (Exception e) {
-                log.warn("Failed to fetch email for UserId {}. Falling back to sandbox static address.",
+                log.warn("Failed to fetch email for UserId {}. Falling back to hardikbhanot123@gmail.com.",
                         event.getUserId());
-                recipientEmail = "user-" + event.getUserId() + "@example.com";
+                recipientEmail = "hardikbhanot123@gmail.com";
             }
 
             helper.setTo(recipientEmail);
