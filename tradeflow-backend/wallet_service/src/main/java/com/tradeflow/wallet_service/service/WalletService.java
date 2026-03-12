@@ -21,6 +21,9 @@ public class WalletService {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private LedgerService ledgerService;
+
     public Wallet getOrCreateWallet(Long userId) {
         return walletRepository.findByUserId(userId).orElseGet(() -> {
             Wallet newWallet = new Wallet();
@@ -39,15 +42,17 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().add(amount));
         walletRepository.save(wallet);
 
-        // 3. Create Audit Log (Transaction entry)
+        // 3. Legacy audit log (Transaction entry)
         Transaction tx = new Transaction();
         tx.setWalletId(wallet.getId());
         tx.setAmount(amount);
         tx.setType("CREDIT");
         tx.setStatus("SUCCESS");
         tx.setTimestamp(LocalDateTime.now());
-
         transactionRepository.save(tx);
+
+        // 4. Ledger entry
+        ledgerService.record(userId, amount, "DEPOSIT", "SUCCESS", null);
 
         return wallet;
     }
@@ -66,13 +71,39 @@ public class WalletService {
             tx.setType("DEBIT");
             tx.setStatus("SUCCESS");
             tx.setTimestamp(LocalDateTime.now());
-
             tx.setReferenceId(orderId.toString());
-
             transactionRepository.save(tx);
+
+            // Ledger entry
+            ledgerService.record(userId, amount, "TRADE_BUY", "SUCCESS", orderId.toString());
 
             return true;
         }
         return false;
+    }
+
+    /**
+     * Withdraws money from the user's wallet and records a WITHDRAWAL ledger entry.
+     *
+     * @param userId      the wallet owner
+     * @param amount      amount to withdraw (must be positive)
+     * @param referenceId optional external reference (e.g. payout request ID)
+     * @return true if withdrawal succeeded, false if insufficient funds
+     */
+    @Transactional
+    public boolean withdrawMoney(Long userId, BigDecimal amount, String referenceId) {
+        Wallet wallet = getOrCreateWallet(userId);
+
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            return false; // Insufficient funds
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        walletRepository.save(wallet);
+
+        // Ledger entry only (no legacy Transaction table entry for withdrawals)
+        ledgerService.record(userId, amount, "WITHDRAWAL", "SUCCESS", referenceId);
+
+        return true;
     }
 }

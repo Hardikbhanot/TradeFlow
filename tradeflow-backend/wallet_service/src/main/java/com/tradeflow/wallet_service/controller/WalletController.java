@@ -1,7 +1,11 @@
 package com.tradeflow.wallet_service.controller;
 
+import com.tradeflow.wallet_service.entity.WalletTransaction;
 import com.tradeflow.wallet_service.model.Wallet;
 import com.tradeflow.wallet_service.repository.WalletRepository;
+import com.tradeflow.wallet_service.service.LedgerService;
+import com.tradeflow.wallet_service.service.WalletService;
+import com.tradeflow.wallet_service.service.IdempotencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
@@ -10,9 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.math.BigDecimal;
-
-import com.tradeflow.wallet_service.service.WalletService;
-import com.tradeflow.wallet_service.service.IdempotencyService;
 
 @RestController
 @RequestMapping("/api/v1/wallets")
@@ -26,6 +27,9 @@ public class WalletController {
 
     @Autowired
     private IdempotencyService idempotencyService;
+
+    @Autowired
+    private LedgerService ledgerService;
 
     @PostMapping("/create")
     public Wallet createWallet(@RequestBody Map<String, Object> payload) {
@@ -70,5 +74,16 @@ public class WalletController {
     @GetMapping("/user/{userId}")
     public Wallet getWalletByUserId(@PathVariable Long userId) {
         return walletService.getOrCreateWallet(userId);
+    }
+
+    /**
+     * Returns the full ledger (transaction history) for the authenticated user.
+     * GET /api/v1/wallets/ledger
+     * Header: X-User-Id: <userId>
+     */
+    @GetMapping("/ledger")
+    public ResponseEntity<List<WalletTransaction>> getLedger(@RequestHeader("X-User-Id") Long userId) {
+        List<WalletTransaction> ledger = ledgerService.getLedger(userId);
+        return ResponseEntity.ok(ledger);
     }
 }

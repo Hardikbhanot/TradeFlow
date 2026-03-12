@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Wallet Confirmation</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #1a7f5a;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+        .content {
+            padding: 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .wallet-details {
+            background-color: #f0faf5;
+            border: 1px solid #b2dfdb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .wallet-details span {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .wallet-details .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a7f5a;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .badge-success { background-color: #d4edda; color: #155724; }
+        .badge-failed  { background-color: #f8d7da; color: #721c24; }
+        .footer {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #1a7f5a;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>💰 TradeFlow Wallet</h2>
+            <p th:text="${label}" style="margin: 5px 0 0 0; font-size: 15px; opacity: 0.9;">Wallet Update</p>
+        </div>
+        <div class="content">
+            <h3>Hello,</h3>
+            <p>A wallet transaction has been processed on your TradeFlow account. Here are the details:</p>
+
+            <div class="amount">
+                ₹<span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+            </div>
+
+            <div class="wallet-details">
+                <span>
+                    <span class="label">Transaction Type:</span>
+                    <span th:text="${type}">DEPOSIT</span>
+                </span>
+                <span>
+                    <span class="label">Status:</span>
+                    <span class="badge"
+                          th:classappend="${status == 'SUCCESS'} ? 'badge-success' : 'badge-failed'"
+                          th:text="${status}">SUCCESS</span>
+                </span>
+                <span>
+                    <span class="label">Reference ID:</span>
+                    <span th:text="${referenceId}" style="font-family: monospace; font-size: 13px; color: #888;">REF-ID</span>
+                </span>
+            </div>
+
+            <p style="color: #555; font-style: italic;">
+                If you did not authorize this transaction, please contact TradeFlow support immediately.
+            </p>
+
+            <div style="text-align: center;">
+                <a href="https://tradeflow.tech/wallet" class="action-button">View Wallet History</a>
+            </div>
+        </div>
+        <div class="footer">
+            &copy; 2026 TradeFlow Inc. All rights reserved.<br>
+            This is an automated notification. Please do not reply to this email.
+        </div>
+    </div>
+</body>
+</html>
