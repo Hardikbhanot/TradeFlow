@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
             const res = await api.post('/auth/register', params);
 
-            // Backend returns a 200 OK string
+
             if (res.status === 200) {
                 setSuccess('Account created! Redirecting to login…');
                 setTimeout(() => navigate('/login'), 1500);
@@ -31,7 +31,7 @@ export default function RegisterPage() {
         } catch (err) {
             let msg = 'Registration failed.';
             if (err.response?.data) {
-                // If it's an object (like a Spring Boot 500 error payload), extract the message
+
                 msg = typeof err.response.data === 'string'
                     ? err.response.data
                     : (err.response.data.message || err.response.data.error || 'Registration failed.');

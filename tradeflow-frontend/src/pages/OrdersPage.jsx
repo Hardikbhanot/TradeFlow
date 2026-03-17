@@ -21,7 +21,7 @@ export default function OrdersPage() {
     const [fetchingPrice, setFetchingPrice] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [placing, setPlacing] = useState(false);
-    const [result, setResult] = useState(null); // {ok, msg}
+    const [result, setResult] = useState(null);
 
     async function fetchPrice() {
         if (!form.symbol.trim()) return;
@@ -91,7 +91,7 @@ export default function OrdersPage() {
                 )}
 
                 <div className="card">
-                    {/* Side Toggle */}
+
                     <div className="tab-row" style={{ marginBottom: '1.25rem' }}>
                         {SIDES.map(s => (
                             <button key={s} type="button"
@@ -103,7 +103,7 @@ export default function OrdersPage() {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {/* Symbol + Price fetch */}
+
                         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
                             <div className="form-group" style={{ flex: 1 }}>
                                 <label>Symbol</label>
@@ -161,7 +161,7 @@ export default function OrdersPage() {
                             </div>
                         )}
 
-                        {/* Estimate */}
+
                         <div style={{ background: 'var(--surface2)', borderRadius: 'var(--radius)', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Estimated Total</span>
                             <span style={{ fontWeight: 700 }}>₹{totalEstimate}</span>
@@ -178,7 +178,7 @@ export default function OrdersPage() {
                 </div>
             </div>
 
-            {/* Confirmation Modal */}
+
             {showConfirm && (
                 <div style={{
                     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',

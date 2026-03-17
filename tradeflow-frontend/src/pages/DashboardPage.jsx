@@ -23,7 +23,7 @@ export default function DashboardPage() {
     const [loadingHoldings, setLoadingHoldings] = useState(true);
     const [toasts, setToasts] = useState([]);
 
-    // Quick order state
+
     const [side, setSide] = useState('BUY');
     const [orderForm, setOrderForm] = useState({ symbol: '', quantity: '', exchange: 'NSE', orderType: 'MARKET', pricePerUnit: '' });
     const [placing, setPlacing] = useState(false);
@@ -39,7 +39,7 @@ export default function DashboardPage() {
             const res = await api.get('/api/v1/portfolio');
             setHoldings(res.data);
         } catch {
-            // silent
+            // ignore
         } finally {
             setLoadingHoldings(false);
         }
@@ -49,7 +49,7 @@ export default function DashboardPage() {
         try {
             const res = await api.get(`/api/v1/wallets/user/${user?.userId}`);
             setWallet(res.data);
-        } catch {/* silent */ }
+        } catch {}
     }, [user]);
 
     const fetchPrices = useCallback(async (syms) => {
@@ -60,7 +60,6 @@ export default function DashboardPage() {
                 const r = await api.get(`/api/v1/market/price/${sym}`);
                 results[sym] = r.data;
             } catch { results[sym] = null; }
-            // Stagger requests to avoid 429 Rate Limits
             await new Promise(resolve => setTimeout(resolve, 300));
         }
         setPrices(p => ({ ...p, ...results }));
@@ -80,7 +79,7 @@ export default function DashboardPage() {
         }
     }, [holdings, fetchPrices]);
 
-    // Compute portfolio stats
+
     const totalInvested = holdings.reduce((s, h) => s + ((h.avgPrice ?? 0) * (h.totalQuantity ?? 0)), 0);
     const totalCurrent = holdings.reduce((s, h) => s + (((prices[h.symbol] ?? h.avgPrice ?? 0) * (h.totalQuantity ?? 0))), 0);
     const pnl = totalCurrent - totalInvested;
@@ -124,7 +123,7 @@ export default function DashboardPage() {
                 <p>Here's your portfolio summary for today.</p>
             </div>
 
-            {/* Stat Cards */}
+
             <div className="stat-cards" style={{ marginBottom: '1.25rem' }}>
                 <div className="stat-card">
                     <div className="label">Wallet Balance</div>
@@ -148,7 +147,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="dashboard-grid">
-                {/* Holdings Table */}
+
                 <div className="dashboard-left">
                     <div className="card" style={{ padding: 0 }}>
                         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
@@ -202,7 +201,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Quick Order Panel */}
+
                 <div className="card" style={{ alignSelf: 'start' }}>
                     <div style={{ fontWeight: 600, marginBottom: '1rem' }}>Quick Order</div>
                     <form className="order-panel" onSubmit={placeQuickOrder}>

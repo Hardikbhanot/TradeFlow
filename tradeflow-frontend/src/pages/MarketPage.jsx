@@ -66,7 +66,7 @@ export default function MarketPage() {
         [watchlist]
     );
 
-    // Fetch watchlist + popular prices continuously for the current user view
+
     useEffect(() => {
         if (allSymbols.length === 0) return undefined;
         let cancelled = false;
@@ -86,7 +86,7 @@ export default function MarketPage() {
                 });
                 setPrices(next);
             } catch {
-                // Keep previously shown prices on intermittent fetch failures.
+
             }
         }
 
@@ -98,7 +98,7 @@ export default function MarketPage() {
         };
     }, [allSymbols]);
 
-    // Range-based history chart (Today / 30D / 60D)
+
     useEffect(() => {
         let cancelled = false;
 
@@ -172,7 +172,7 @@ export default function MarketPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Chart for selected stock */}
+
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <div>
@@ -222,7 +222,7 @@ export default function MarketPage() {
                     )}
                 </div>
 
-                {/* Watchlist Sidebar */}
+
                 <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>My Watchlist</div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -261,7 +261,7 @@ export default function MarketPage() {
                 </div>
             </div>
 
-            {/* Popular stocks grid */}
+
             <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-muted)' }}>Popular Stocks</h3>
             <div className="market-grid">
                 {POPULAR.map(({ sym, name }) => (

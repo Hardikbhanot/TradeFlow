@@ -59,10 +59,9 @@ public class AuthController {
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
             AppUser user = userOpt.get();
 
-            // Generate 6-digit OTP
             String otpCode = String.format("%06d", new Random().nextInt(999999));
 
-            // Upsert OTP to avoid unique-constraint race on repeated login attempts
+
             OtpEntity otpEntity = otpRepository.findByUsername(username)
                     .orElseGet(OtpEntity::new);
             otpEntity.setUsername(username);
@@ -70,7 +69,6 @@ public class AuthController {
             otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
             otpRepository.save(otpEntity);
 
-            // Publish OTP event
             OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode);
             kafkaTemplate.send("otp-topic", event);
 
@@ -103,7 +101,7 @@ public class AuthController {
             return ResponseEntity.status(401).body("Incorrect OTP");
         }
 
-        // Success
+
         AppUser user = userOpt.get();
         otpRepository.deleteByUsername(username);
         String token = jwtUtil.generateToken(user.getId().toString(), user.getUsername(), user.getEmail());
@@ -111,7 +109,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", token));
     }
 
-    // New internal endpoint for services to lookup users by ID
+
     @GetMapping("/users/{id}/email")
     public ResponseEntity<String> getUserEmailById(@PathVariable Long id) {
         return userRepository.findById(id)

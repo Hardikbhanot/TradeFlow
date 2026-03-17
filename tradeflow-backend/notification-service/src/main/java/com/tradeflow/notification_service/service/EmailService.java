@@ -97,7 +97,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             helper.setFrom(resolveFromAddress());
-            // Dynamically fetch the real email from the Auth Service via Feign
+
             String recipientEmail;
             try {
                 recipientEmail = authClient.getUserEmailById(event.getUserId());

@@ -4,7 +4,7 @@ const api = axios.create({
     baseURL: '/',
 });
 
-// Attach JWT to every request automatically
+
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('tf_token');
     if (token) {
@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// On 401, clear token and redirect to login
+
 api.interceptors.response.use(
     (res) => res,
     (err) => {

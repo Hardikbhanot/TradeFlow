@@ -30,7 +30,7 @@ export default function TickerBar() {
         sym,
         price: prices[sym] ?? '---',
     }));
-    // Duplicate for seamless loop
+
     const doubled = [...items, ...items];
 
     return (
