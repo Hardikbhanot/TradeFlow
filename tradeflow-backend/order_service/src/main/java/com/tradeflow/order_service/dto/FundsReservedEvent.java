@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class FundsReservedEvent {
     private Long orderId;
     private Long userId;
+    private String status;
 }

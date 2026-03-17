@@ -9,5 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class FundsReservedEvent {
     private Long orderId;
+    private Long userId;
     private String status; 
 }

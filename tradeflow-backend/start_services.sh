@@ -1,17 +1,8 @@
 #!/bin/bash
 
-# Base directory (dynamically correctly resolves to the path where this script lives, regardless of where user executes it)
-BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+ENV_FILE="$BASE_DIR/.env"
 
-# Load environment variables from .env file if it exists
-if [ -f "$BASE_DIR/.env" ]; then
-    echo "Loading environment variables from $BASE_DIR/.env"
-    source "$BASE_DIR/.env"
-else
-    echo "No .env file found in $BASE_DIR. Proceeding without loading environment variables."
-fi
-
-# Array of services in suggested startup order
 SERVICES=(
     "discovery-server"
     "api-gateway"
@@ -24,20 +15,68 @@ SERVICES=(
     "notification-service"
 )
 
-echo "🚀 Launching all microservices in separate Terminal windows from: $BASE_DIR"
+service_port() {
+    case "$1" in
+        discovery-server) echo 8761 ;;
+        api-gateway) echo 8080 ;;
+        auth-service) echo 9000 ;;
+        user_service) echo 8081 ;;
+        wallet_service) echo 8082 ;;
+        market_service) echo 8085 ;;
+        order_service) echo 8083 ;;
+        portfolio_service) echo 8084 ;;
+        notification-service) echo 8086 ;;
+        *) echo "" ;;
+    esac
+}
+
+resolve_runner() {
+    local service_dir="$1"
+    if [ -x "$service_dir/mvnw" ]; then
+        echo "./mvnw -q spring-boot:run"
+    else
+        echo "mvn -q spring-boot:run"
+    fi
+}
+
+escape_osascript_string() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    printf '%s' "$s"
+}
+
+echo "Launching all microservices in separate Terminal windows from: $BASE_DIR"
 
 for SERVICE in "${SERVICES[@]}"; do
-    if [ -d "$BASE_DIR/$SERVICE" ]; then
-        echo "Starting $SERVICE..."
-        # Uses osascript to tell the macOS Terminal application to open a new window and run the command
-        osascript -e "tell application \"Terminal\" to do script \"cd \\\"$BASE_DIR/$SERVICE\\\" && set -o allexport && source \\\"$BASE_DIR/.env\\\" && set +o allexport && mvn spring-boot:run\""
-        
-        # Adding a 2 second delay between launches so CPU/Memory isn't hammered completely at once
-        sleep 2
+    SERVICE_DIR="$BASE_DIR/$SERVICE"
+    PORT="$(service_port "$SERVICE")"
+
+    if [ ! -d "$SERVICE_DIR" ]; then
+        echo "Directory $SERVICE not found in $BASE_DIR. Skipping."
+        continue
+    fi
+
+    if [ -n "$PORT" ]; then
+        EXISTING_PID="$(lsof -t -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -n 1)"
+        if [ -n "$EXISTING_PID" ]; then
+            echo "Skipping $SERVICE: port $PORT is already in use by PID $EXISTING_PID."
+            continue
+        fi
+    fi
+
+    RUNNER_CMD="$(resolve_runner "$SERVICE_DIR")"
+    LAUNCH_CMD="cd \"$SERVICE_DIR\" || exit 1; set -o allexport; [ -f \"$ENV_FILE\" ] && source \"$ENV_FILE\"; set +o allexport; $RUNNER_CMD"
+    ESCAPED_LAUNCH_CMD="$(escape_osascript_string "$LAUNCH_CMD")"
+
+    echo "Starting $SERVICE on port ${PORT:-unknown}..."
+    osascript -e "tell application \"Terminal\" to do script \"$ESCAPED_LAUNCH_CMD\""
+    if [ "$SERVICE" = "discovery-server" ]; then
+        sleep 8
     else
-        echo "⚠️  Directory $SERVICE not found in $BASE_DIR! Skipping..."
+        sleep 2
     fi
 done
 
-echo "✅ All available services have been launched!"
-echo "If you need to restart one, just go to its specific Terminal window, hit Ctrl+C, and run 'mvn spring-boot:run'."
+echo "Startup dispatch complete."
+echo "If a service was skipped, it was already running on its configured port."

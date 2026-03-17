@@ -8,5 +8,6 @@ public class OrderCreatedEvent {
     private Long orderId;
     private Long userId;
     private BigDecimal totalAmount;
-    private String orderType; // "BUY" or "SELL"
+    private String side;      // BUY or SELL
+    private String orderType; // MARKET or LIMIT
 }

@@ -1,8 +1,12 @@
 package com.tradeflow.market_service.controller;
 
+import com.tradeflow.market_service.dto.PriceHistoryPoint;
 import com.tradeflow.market_service.service.MarketService;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/market")
@@ -20,6 +24,22 @@ public class MarketController {
     @GetMapping("/price/{symbol}")
     public BigDecimal getPrice(@PathVariable String symbol) {
         return marketService.getLivePrice(symbol);
+    }
+
+    @GetMapping("/prices")
+    public Map<String, BigDecimal> getPrices(@RequestParam("symbols") String symbols) {
+        List<String> parsedSymbols = Arrays.stream(symbols.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        return marketService.getBatchLivePrices(parsedSymbols);
+    }
+
+    @GetMapping("/history/{symbol}")
+    public List<PriceHistoryPoint> getHistory(
+            @PathVariable String symbol,
+            @RequestParam(name = "range", defaultValue = "TODAY") String range) {
+        return marketService.getPriceHistory(symbol, range);
     }
 
     @GetMapping("/login")

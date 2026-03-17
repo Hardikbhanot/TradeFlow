@@ -7,7 +7,6 @@ import com.tradeflow.wallet_service.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.tradeflow.wallet_service.exception.WalletNotFoundException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -105,5 +104,40 @@ public class WalletService {
         ledgerService.record(userId, amount, "WITHDRAWAL", "SUCCESS", referenceId);
 
         return true;
+    }
+
+    @Transactional
+    public Wallet applyWalletUpdate(Long userId, BigDecimal amount, String transactionType, String referenceId) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero.");
+        }
+
+        String normalizedType = transactionType == null ? "" : transactionType.trim().toUpperCase();
+        Wallet wallet = getOrCreateWallet(userId);
+
+        switch (normalizedType) {
+            case "CREDIT" -> wallet.setBalance(wallet.getBalance().add(amount));
+            case "DEBIT" -> {
+                if (wallet.getBalance().compareTo(amount) < 0) {
+                    throw new IllegalStateException("Insufficient funds for DEBIT update.");
+                }
+                wallet.setBalance(wallet.getBalance().subtract(amount));
+            }
+            default -> throw new IllegalArgumentException("Unsupported transactionType: " + transactionType);
+        }
+
+        walletRepository.save(wallet);
+
+        Transaction tx = new Transaction();
+        tx.setWalletId(wallet.getId());
+        tx.setAmount(amount);
+        tx.setType(normalizedType);
+        tx.setStatus("SUCCESS");
+        tx.setTimestamp(LocalDateTime.now());
+        tx.setReferenceId(referenceId);
+        transactionRepository.save(tx);
+
+        ledgerService.record(userId, amount, normalizedType, "SUCCESS", referenceId);
+        return wallet;
     }
 }

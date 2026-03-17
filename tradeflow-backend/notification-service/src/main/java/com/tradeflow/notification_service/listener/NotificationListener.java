@@ -40,4 +40,16 @@ public class NotificationListener {
             log.error("❌ Wallet email failed: {}", e.getMessage());
         }
     }
+
+    @KafkaListener(topics = "otp-topic", groupId = "notification-otp-group")
+    public void handleOtpRequest(com.tradeflow.notification_service.dto.OtpRequestedEvent event) {
+        log.info("🔐 Processing OTP request for User: {}", event.getUsername());
+
+        try {
+            emailService.sendOtpEmail(event);
+            log.info("✅ OTP email sent to {}", event.getEmail());
+        } catch (Exception e) {
+            log.error("❌ OTP email failed: {}", e.getMessage());
+        }
+    }
 }

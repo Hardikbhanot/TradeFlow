@@ -3,7 +3,7 @@ package com.tradeflow.wallet_service.listener;
 import com.tradeflow.wallet_service.dto.FundsRejectedEvent;
 import com.tradeflow.wallet_service.dto.FundsReservedEvent;
 import com.tradeflow.wallet_service.dto.OrderCreatedEvent;
-import com.tradeflow.wallet_service.service.LedgerService;
+import com.tradeflow.wallet_service.dto.WalletUpdateEvent;
 import com.tradeflow.wallet_service.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,9 +18,6 @@ public class WalletEventListener {
     private WalletService walletService;
 
     @Autowired
-    private LedgerService ledgerService;
-
-    @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = "order-created-topic", groupId = "wallet-group")
@@ -29,17 +26,12 @@ public class WalletEventListener {
 
         try {
             // 🟢 Logic for SELL: Auto-approve
-            if ("SELL".equalsIgnoreCase(event.getOrderType())) {
-                FundsReservedEvent approvedEvent = new FundsReservedEvent(event.getOrderId(), "SUCCESS");
-                kafkaTemplate.send("funds-reserved-topic", approvedEvent);
-
-                // Ledger entry for SELL (credit back after selling shares)
-                ledgerService.record(
+            if ("SELL".equalsIgnoreCase(event.getSide())) {
+                FundsReservedEvent approvedEvent = new FundsReservedEvent(
+                        event.getOrderId(),
                         event.getUserId(),
-                        event.getTotalAmount(),
-                        "TRADE_SELL",
-                        "SUCCESS",
-                        event.getOrderId().toString());
+                        "SUCCESS");
+                kafkaTemplate.send("funds-reserved-topic", approvedEvent);
 
                 System.out.println("✅ Auto-approved SELL order ID: " + event.getOrderId());
                 return;
@@ -52,7 +44,7 @@ public class WalletEventListener {
             if (hasEnoughMoney) {
                 System.out.println("✅ Funds reserved for Order ID: " + event.getOrderId());
                 kafkaTemplate.send("funds-reserved-topic",
-                        new FundsReservedEvent(event.getOrderId(), "SUCCESS"));
+                        new FundsReservedEvent(event.getOrderId(), event.getUserId(), "SUCCESS"));
             } else {
                 System.out.println("❌ Insufficient funds for Order ID: " + event.getOrderId());
                 kafkaTemplate.send("funds-rejected-topic",
@@ -69,6 +61,25 @@ public class WalletEventListener {
             e.printStackTrace();
             kafkaTemplate.send("funds-rejected-topic",
                     new FundsRejectedEvent(event.getOrderId(), event.getUserId(), "Wallet Error"));
+        }
+    }
+
+    @KafkaListener(topics = "wallet-balance-update-topic", groupId = "wallet-group")
+    public void handleWalletBalanceUpdate(WalletUpdateEvent event) {
+        System.out.println("📥 Wallet balance update received: " + event);
+
+        try {
+            walletService.applyWalletUpdate(
+                    event.getUserId(),
+                    event.getAmount(),
+                    event.getTransactionType(),
+                    event.getReferenceId());
+
+            System.out.println("✅ Wallet balance updated for user: " + event.getUserId());
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to apply wallet update for user " + event.getUserId()
+                    + ". Reason: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

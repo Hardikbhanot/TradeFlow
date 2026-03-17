@@ -28,7 +28,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        final List<String> apiEndpointsToBeIgnored = List.of("/auth/register", "/auth/login", "/eureka");
+        final List<String> apiEndpointsToBeIgnored = List.of("/auth/register", "/auth/login", "/auth/verify-otp",
+                "/eureka");
 
         boolean isApiSecured = apiEndpointsToBeIgnored.stream()
                 .noneMatch(uri -> request.getRequestURI().contains(uri));

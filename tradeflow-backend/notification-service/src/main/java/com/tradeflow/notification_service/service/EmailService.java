@@ -4,6 +4,7 @@ import com.tradeflow.notification_service.dto.LedgerTransactionEvent;
 import com.tradeflow.notification_service.dto.NotificationEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -13,6 +14,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 import com.tradeflow.notification_service.client.AuthClient;
+import com.tradeflow.notification_service.dto.OtpRequestedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,54 @@ public class EmailService {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
         this.authClient = authClient;
+        normalizeMailPassword();
+        validateMailConfiguration();
+    }
+
+    private void normalizeMailPassword() {
+        if (mailSender instanceof JavaMailSenderImpl sender) {
+            String password = sender.getPassword();
+            if (password != null) {
+                String normalized = stripWrappingQuotes(password.trim()).replaceAll("\\s+", "");
+                if (!normalized.equals(password)) {
+                    sender.setPassword(normalized);
+                }
+            }
+        }
+    }
+
+    private String stripWrappingQuotes(String value) {
+        if (value == null || value.length() < 2) {
+            return value;
+        }
+        if ((value.startsWith("\"") && value.endsWith("\"")) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+
+    private void validateMailConfiguration() {
+        if (mailSender instanceof JavaMailSenderImpl sender) {
+            String username = stripWrappingQuotes(sender.getUsername() == null ? "" : sender.getUsername().trim());
+            String password = sender.getPassword();
+            if (username.isBlank()) {
+                log.error("MAIL_USERNAME is empty. OTP emails cannot be sent.");
+            }
+            if (password == null || password.isBlank()) {
+                log.error("MAIL_PASSWORD is empty. OTP emails cannot be sent.");
+            }
+        }
+    }
+
+    private String resolveFromAddress() {
+        if (mailSender instanceof JavaMailSenderImpl sender) {
+            String username = sender.getUsername();
+            if (username != null && !username.isBlank()) {
+                return stripWrappingQuotes(username.trim());
+            }
+        }
+        return "no-reply@tradeflow.tech";
     }
 
     public void sendTradeConfirmationEmail(NotificationEvent event) {
@@ -46,7 +96,7 @@ public class EmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom("no-reply@tradeflow.tech");
+            helper.setFrom(resolveFromAddress());
             // Dynamically fetch the real email from the Auth Service via Feign
             String recipientEmail;
             try {
@@ -90,7 +140,7 @@ public class EmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom("no-reply@tradeflow.tech");
+            helper.setFrom(resolveFromAddress());
 
             String recipientEmail;
             try {
@@ -108,6 +158,29 @@ public class EmailService {
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void sendOtpEmail(OtpRequestedEvent event) {
+        try {
+            Context context = new Context();
+            context.setVariable("username", event.getUsername());
+            context.setVariable("otpCode", event.getOtpCode());
+
+            String html = templateEngine.process("otp-email", context);
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(resolveFromAddress());
+            helper.setTo(event.getEmail());
+            helper.setSubject("Your TradeFlow Login Code: " + event.getOtpCode());
+            helper.setText(html, true);
+
+            mailSender.send(mimeMessage);
+            log.info("Successfully sent OTP email to {}", event.getEmail());
+        } catch (MessagingException e) {
+            log.error("Failed to send OTP email.", e);
         }
     }
 }

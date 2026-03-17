@@ -1,6 +1,5 @@
 package com.tradeflow.order_service.listener;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradeflow.order_service.dto.FundsRejectedEvent;
 import com.tradeflow.order_service.dto.FundsReservedEvent;
 import com.tradeflow.order_service.dto.OrderCompletedEvent;
@@ -57,7 +56,8 @@ public class OrderEventListener {
                                 WalletUpdateEvent walletEvent = new WalletUpdateEvent(
                                                 order.getUserId(),
                                                 totalCredit,
-                                                "CREDIT");
+                                                "CREDIT",
+                                                order.getId().toString());
 
                                 kafkaTemplate.send("wallet-balance-update-topic", walletEvent);
                                 log.info("💰 Sell order confirmed. Sending ₹{} back to Wallet.", totalCredit);
@@ -127,7 +127,8 @@ public class OrderEventListener {
                         WalletUpdateEvent refundEvent = new WalletUpdateEvent(
                                         order.getUserId(),
                                         totalAmount,
-                                        rollbackType);
+                                        rollbackType,
+                                        order.getId().toString());
 
                         kafkaTemplate.send("wallet-balance-update-topic", refundEvent);
                         log.info("💸 Saga Rollback: Published {} of ₹{} to Wallet for failed Order ID: {}",
