@@ -1,0 +1,72 @@
+services:
+  discovery-server:
+    image: ghcr.io/${GITHUB_REPOSITORY}/discovery-server:latest
+    ports: ["8761:8761"]
+    restart: always
+
+  api-gateway:
+    image: ghcr.io/${GITHUB_REPOSITORY}/api-gateway:latest
+    ports: ["8080:8080"]
+    depends_on: [discovery-server]
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    restart: always
+
+  auth-service:
+    image: ghcr.io/${GITHUB_REPOSITORY}/auth-service:latest
+    depends_on: [discovery-server]
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=prod
+    restart: always
+
+  market_service:
+    image: ghcr.io/${GITHUB_REPOSITORY}/market_service:latest
+    ports: ["8085:8085"]
+    depends_on: [discovery-server, kafka, redis]
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_DATA_REDIS_HOST=redis
+    restart: always
+
+  portfolio_service:
+    image: ghcr.io/${GITHUB_REPOSITORY}/portfolio_service:latest
+    depends_on: [discovery-server]
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_DATA_REDIS_HOST=redis
+    restart: always
+
+  order_service:
+    image: ghcr.io/${GITHUB_REPOSITORY}/order_service:latest
+    depends_on: [discovery-server, kafka]
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    restart: always
+
+  notification-service:
+    image: ghcr.io/${GITHUB_REPOSITORY}/notification-service:latest
+    depends_on: [discovery-server, kafka]
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    restart: always
+
+  kafka:
+    image: apache/kafka:latest
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    restart: always
+
+  redis:
+    image: redis:alpine
+    restart: always

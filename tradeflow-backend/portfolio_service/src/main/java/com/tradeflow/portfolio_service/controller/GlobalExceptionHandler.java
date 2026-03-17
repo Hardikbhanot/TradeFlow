@@ -37,9 +37,9 @@ public class GlobalExceptionHandler {
         System.err.println("🚨 Unknown Exception in Controller!");
         ex.printStackTrace();
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Internal error or Bad Request");
+        response.put("error", "Internal error");
         response.put("details", ex.getMessage());
         response.put("class", ex.getClass().getName());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
