@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
+import SymbolSearch from '../components/SymbolSearch';
 import api from '../api/axios';
 
 const EXCHANGES = ['NSE', 'BSE'];
@@ -24,10 +25,14 @@ export default function OrdersPage() {
     const [result, setResult] = useState(null);
 
     async function fetchPrice() {
-        if (!form.symbol.trim()) return;
+        fetchPriceForSym(form.symbol);
+    }
+
+    async function fetchPriceForSym(symbol) {
+        if (!symbol.trim()) return;
         setFetchingPrice(true);
         try {
-            const r = await api.get(`/api/v1/market/price/${form.symbol.toUpperCase()}`);
+            const r = await api.get(`/api/v1/market/price/${symbol.toUpperCase()}`);
             setLivePrice(r.data);
             if (form.orderType === 'MARKET') {
                 setForm(f => ({ ...f, pricePerUnit: parseFloat(r.data).toFixed(2) }));
@@ -104,15 +109,20 @@ export default function OrdersPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
                             <div className="form-group" style={{ flex: 1 }}>
-                                <label>Symbol</label>
-                                <input className="form-input" placeholder="RELIANCE" value={form.symbol}
-                                    onChange={e => { setForm(f => ({ ...f, symbol: e.target.value })); setLivePrice(null); }} />
+                                <label>Symbol Search</label>
+                                <SymbolSearch onSelect={(sym) => {
+                                    setForm(f => ({ ...f, symbol: sym }));
+                                    setLivePrice(null);
+                                    fetchPriceForSym(sym);
+                                }} />
+                                {form.symbol && (
+                                    <div style={{ marginTop: '6px', fontSize: '0.8rem', color: 'var(--blue)', fontWeight: 600 }}>
+                                        Selected: {form.symbol}
+                                    </div>
+                                )}
                             </div>
-                            <button className="btn btn-ghost" type="button" onClick={fetchPrice} disabled={fetchingPrice || !form.symbol.trim()}>
-                                {fetchingPrice ? '…' : '🔍 Price'}
-                            </button>
                         </div>
 
                         {livePrice && (

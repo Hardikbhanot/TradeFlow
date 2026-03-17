@@ -17,6 +17,8 @@ public class RedisConfig {
         // Use String serializers so we can read the data in redis-cli
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new StringRedisSerializer());
         
         return template;
     }

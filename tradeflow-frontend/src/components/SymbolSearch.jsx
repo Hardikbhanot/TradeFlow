@@ -1,42 +1,13 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
-
-// Top Indian Stocks Dictionary
-const STOCKS = [
-    { symbol: 'RELIANCE', name: 'Reliance Industries Limited' },
-    { symbol: 'TCS', name: 'Tata Consultancy Services Limited' },
-    { symbol: 'HDFCBANK', name: 'HDFC Bank Limited' },
-    { symbol: 'ICICIBANK', name: 'ICICI Bank Limited' },
-    { symbol: 'INFY', name: 'Infosys Limited' },
-    { symbol: 'ITC', name: 'ITC Limited' },
-    { symbol: 'SBIN', name: 'State Bank of India' },
-    { symbol: 'BHARTIARTL', name: 'Bharti Airtel Limited' },
-    { symbol: 'BAJFINANCE', name: 'Bajaj Finance Limited' },
-    { symbol: 'L&T', name: 'Larsen & Toubro Limited' },
-    { symbol: 'HUL', name: 'Hindustan Unilever Limited' },
-    { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank Limited' },
-    { symbol: 'AXISBANK', name: 'Axis Bank Limited' },
-    { symbol: 'ASIANPAINT', name: 'Asian Paints Limited' },
-    { symbol: 'MARUTI', name: 'Maruti Suzuki India Limited' },
-    { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical Industries Limited' },
-    { symbol: 'TITAN', name: 'Titan Company Limited' },
-    { symbol: 'ULTRACEMCO', name: 'UltraTech Cement Limited' },
-    { symbol: 'WIPRO', name: 'Wipro Limited' },
-    { symbol: 'TATASTEEL', name: 'Tata Steel Limited' },
-    { symbol: 'ADANIENT', name: 'Adani Enterprises Limited' },
-    { symbol: 'NTPC', name: 'NTPC Limited' },
-    { symbol: 'POWERGRID', name: 'Power Grid Corporation of India Limited' },
-    { symbol: 'M&M', name: 'Mahindra & Mahindra Limited' },
-    { symbol: 'ONGC', name: 'Oil & Natural Gas Corporation Limited' },
-    { symbol: 'HCLTECH', name: 'HCL Technologies Limited' },
-    { symbol: 'BAJAJFINSV', name: 'Bajaj Finserv Limited' },
-    { symbol: 'HAL', name: 'Hindustan Aeronautics Limited' },
-    { symbol: 'JSWSTEEL', name: 'JSW Steel Limited' },
-    { symbol: 'COALINDIA', name: 'Coal India Limited' },
-];
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
 
 export default function SymbolSearch({ onSelect }) {
+    const navigate = useNavigate();
     const [query, setQuery] = useState('');
+    const [results, setResults] = useState([]);
     const [isFocused, setIsFocused] = useState(false);
+    const [loading, setLoading] = useState(false);
     const wrapperRef = useRef(null);
 
     useEffect(() => {
@@ -45,28 +16,43 @@ export default function SymbolSearch({ onSelect }) {
                 setIsFocused(false);
             }
         }
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const results = useMemo(() => {
+    useEffect(() => {
         const trimmed = query.trim();
-        if (!trimmed) return [];
+        if (trimmed.length < 2) {
+            setResults([]);
+            return;
+        }
 
-        const lower = trimmed.toLowerCase();
-        return STOCKS.filter(
-            s => s.symbol.toLowerCase().includes(lower) || s.name.toLowerCase().includes(lower)
-        ).slice(0, 8);
+        const timeoutId = setTimeout(async () => {
+            setLoading(true);
+            try {
+                const res = await api.get('/api/v1/market/search', {
+                    params: { q: trimmed }
+                });
+                setResults(res.data || []);
+            } catch (err) {
+                console.error("Search failed", err);
+                setResults([]);
+            } finally {
+                setLoading(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
     }, [query]);
 
     function handleSelect(symbol) {
         setQuery('');
+        setResults([]);
         setIsFocused(false);
         if (onSelect) onSelect(symbol);
     }
 
-    const isOpen = isFocused && query.trim() && results.length > 0;
+    const isOpen = isFocused && query.trim().length >= 2;
 
     return (
         <div ref={wrapperRef} style={{ position: 'relative', width: '100%', maxWidth: '350px' }}>
@@ -74,11 +60,17 @@ export default function SymbolSearch({ onSelect }) {
                 className="form-input"
                 style={{ width: '100%' }}
                 type="text"
-                placeholder="🔍 Search stocks (e.g. Reliance, HDFC...)"
+                placeholder="🔍 Search NSE stocks (e.g. RELIANCE, ZOMATO...)"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onFocus={() => setIsFocused(true)}
             />
+
+            {loading && (
+                <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    ...
+                </div>
+            )}
 
             {isOpen && (
                 <div style={{
@@ -92,25 +84,43 @@ export default function SymbolSearch({ onSelect }) {
                     marginTop: '4px',
                     zIndex: 50,
                     boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                    overflow: 'hidden'
+                    maxHeight: '300px',
+                    overflowY: 'auto'
                 }}>
-                    {results.map(stock => (
-                        <div
-                            key={stock.symbol}
-                            onClick={() => handleSelect(stock.symbol)}
-                            style={{
-                                padding: '10px 15px',
-                                borderBottom: '1px solid var(--border)',
-                                cursor: 'pointer',
-                                transition: 'var(--transition)'
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                        >
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{stock.symbol}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stock.name}</div>
+                    {results.length > 0 ? (
+                        results.map(symbol => (
+                            <div
+                                key={symbol}
+                                style={{
+                                    padding: '10px 15px',
+                                    borderBottom: '1px solid var(--border)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'var(--transition)'
+                                }}
+                                onClick={() => handleSelect(symbol)}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{symbol}</div>
+                                <button className="btn btn-green" style={{ padding: '2px 8px', fontSize: '0.65rem' }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/orders?symbol=${symbol}`);
+                                        setIsFocused(false);
+                                        setQuery('');
+                                    }}>
+                                    BUY
+                                </button>
+                            </div>
+                        ))
+                    ) : !loading && (
+                        <div style={{ padding: '15px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            No matching symbols found
                         </div>
-                    ))}
+                    )}
                 </div>
             )}
         </div>

@@ -32,39 +32,28 @@ export default function MarketPage() {
     const [chartData, setChartData] = useState([]);
     const [chartRange, setChartRange] = useState('TODAY');
     const [chartLoading, setChartLoading] = useState(false);
-    const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
-
-    const watchlistStorageKey = useMemo(() => {
-        const identity = user?.userId ?? user?.email ?? 'anonymous';
-        return `tf_watchlist_${identity}`;
-    }, [user?.email, user?.userId]);
+    const [watchlist, setWatchlist] = useState([]);
 
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(watchlistStorageKey);
-            if (!saved) {
-                setWatchlist(DEFAULT_WATCHLIST);
-                return;
+        async function fetchWatchlist() {
+            try {
+                const res = await api.get('/api/v1/watchlist');
+                if (Array.isArray(res.data)) {
+                    setWatchlist(res.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch watchlist", err);
             }
-            const parsed = JSON.parse(saved);
-            if (!Array.isArray(parsed) || parsed.length === 0) {
-                setWatchlist(DEFAULT_WATCHLIST);
-                return;
-            }
-            setWatchlist(parsed.map((s) => String(s).toUpperCase()));
-        } catch {
-            setWatchlist(DEFAULT_WATCHLIST);
         }
-    }, [watchlistStorageKey]);
-
-    useEffect(() => {
-        localStorage.setItem(watchlistStorageKey, JSON.stringify(watchlist));
-    }, [watchlist, watchlistStorageKey]);
+        fetchWatchlist();
+    }, []);
 
     const allSymbols = useMemo(
         () => Array.from(new Set([...watchlist, ...POPULAR.map((p) => p.sym)])),
         [watchlist]
     );
+
+    const fmt = (n) => n == null ? '---' : Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
     useEffect(() => {
@@ -138,26 +127,34 @@ export default function MarketPage() {
         };
     }, [selected, chartRange]);
 
-    function handleSearchSelect(symbol) {
+    async function handleSearchSelect(symbol) {
         const normalized = String(symbol).toUpperCase();
         if (!watchlist.includes(normalized)) {
-            setWatchlist((w) => [...w, normalized]);
+            try {
+                await api.post(`/api/v1/watchlist/${normalized}`);
+                setWatchlist((w) => [...w, normalized]);
+            } catch (err) {
+                console.error("Failed to add to watchlist", err);
+            }
         }
         setSelected(normalized);
     }
 
-    function removeWatchlist(e, symbol) {
+    async function removeWatchlist(e, symbol) {
         e.stopPropagation();
-        setWatchlist((w) => {
-            const next = w.filter((s) => s !== symbol);
-            if (selected === symbol) {
-                setSelected(next[0] ?? 'RELIANCE');
-            }
-            return next;
-        });
+        try {
+            await api.delete(`/api/v1/watchlist/${symbol}`);
+            setWatchlist((w) => {
+                const next = w.filter((s) => s !== symbol);
+                if (selected === symbol) {
+                    setSelected(next[0] ?? 'RELIANCE');
+                }
+                return next;
+            });
+        } catch (err) {
+            console.error("Failed to remove from watchlist", err);
+        }
     }
-
-    const fmt = (n) => n == null ? '---' : Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <Layout title="Market">
@@ -269,8 +266,12 @@ export default function MarketPage() {
                         style={{ borderColor: selected === sym ? 'var(--blue)' : undefined }}>
                         <div className="market-symbol">{sym}</div>
                         <div className="market-name">{name}</div>
-                        <div className="market-price" style={{ color: 'var(--green)' }}>
+                        <div className="market-price" style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {prices[sym] != null ? `₹${fmt(prices[sym])}` : <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, display: 'inline-block' }} />}
+                            <button className="btn btn-green" style={{ padding: '2px 8px', fontSize: '0.65rem' }}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/orders?symbol=${sym}`); }}>
+                                BUY
+                            </button>
                         </div>
                     </div>
                 ))}

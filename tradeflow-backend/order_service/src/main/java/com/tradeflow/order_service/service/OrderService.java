@@ -16,6 +16,7 @@ import com.tradeflow.order_service.enums.OrderSide;
 import com.tradeflow.order_service.dto.OrderRequest;
 import com.tradeflow.order_service.dto.OrderCompletedEvent;
 import com.tradeflow.order_service.dto.WalletUpdateEvent;
+import com.tradeflow.order_service.dto.NotificationEvent;
 // import com.tradeflow.order_service.enums.TransactionType;
 
 @Service
@@ -103,5 +104,66 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
         order.setStatus(newStatus);
         orderRepository.save(order);
+    }
+
+    @Transactional
+    public void completeOrder(Long orderId, BigDecimal executedPrice) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            log.warn("Order {} is already completed. Skipping.", orderId);
+            return;
+        }
+
+        log.info("🎯 Completing Order ID: {} ({}) at ₹{}", orderId, order.getType(), executedPrice);
+
+        // 1. Update status in DB
+        order.setStatus(OrderStatus.COMPLETED);
+        order.setExecutedPrice(executedPrice);
+        orderRepository.save(order);
+
+        // 2. Wallet Credit for Sells
+        if (order.getSide() == OrderSide.SELL) {
+            BigDecimal totalCredit = BigDecimal.valueOf(order.getQuantity()).multiply(executedPrice);
+
+            WalletUpdateEvent walletEvent = new WalletUpdateEvent(
+                    order.getUserId(),
+                    totalCredit,
+                    "CREDIT",
+                    order.getId().toString());
+
+            kafkaTemplate.send("wallet-balance-update-topic", walletEvent);
+            log.info("💰 Sell order confirmed. Sending ₹{} back to Wallet for Order ID: {}", totalCredit, order.getId());
+        }
+
+        // 3. Notify Portfolio Service to update holdings
+        OrderCompletedEvent completedEvent = new OrderCompletedEvent(
+                order.getId(),
+                order.getUserId(),
+                order.getSymbol(),
+                order.getExchange(),
+                BigDecimal.valueOf(order.getQuantity()),
+                executedPrice,
+                order.getSide());
+
+        kafkaTemplate.send("order-completed-topic", completedEvent);
+        log.info("📢 OrderCompletedEvent published for Portfolio: {} (Order ID: {})", order.getSymbol(), order.getId());
+
+        // 4. Notify Notification Service to dispatch Confirmation Email
+        String tradeMessage = String.format(
+                "Successfully executed %s order for %d shares of %s at ₹%.2f",
+                order.getSide().name(), order.getQuantity(), order.getSymbol(), executedPrice);
+
+        NotificationEvent notificationEvent = new NotificationEvent(
+                order.getUserId(),
+                order.getSide().name(),
+                tradeMessage,
+                order.getSymbol(),
+                order.getQuantity(),
+                executedPrice.doubleValue());
+
+        kafkaTemplate.send("notification-topic", notificationEvent);
+        log.info("📧 NotificationEvent published for Order ID: {}", order.getId());
     }
 }

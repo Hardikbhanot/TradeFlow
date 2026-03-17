@@ -14,11 +14,14 @@ public class MarketController {
 
     private final MarketService marketService;
     private final com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService;
+    private final com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService;
 
     public MarketController(MarketService marketService,
-            com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService) {
+            com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService,
+            com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService) {
         this.marketService = marketService;
         this.upStoxAuthService = upStoxAuthService;
+        this.upstoxInstrumentService = upstoxInstrumentService;
     }
 
     @GetMapping("/price/{symbol}")
@@ -41,6 +44,12 @@ public class MarketController {
             @RequestParam(name = "range", defaultValue = "TODAY") String range) {
         return marketService.getPriceHistory(symbol, range);
     }
+
+    @GetMapping("/search")
+    public List<String> search(@RequestParam("q") String query) {
+        return upstoxInstrumentService.searchInstruments(query);
+    }
+
 
     @GetMapping("/login")
     public String getUpstoxLoginUrl() {

@@ -2,10 +2,7 @@ package com.tradeflow.order_service.listener;
 
 import com.tradeflow.order_service.dto.FundsRejectedEvent;
 import com.tradeflow.order_service.dto.FundsReservedEvent;
-import com.tradeflow.order_service.dto.OrderCompletedEvent;
 import com.tradeflow.order_service.dto.WalletUpdateEvent;
-import com.tradeflow.order_service.dto.NotificationEvent;
-import com.tradeflow.order_service.entity.Order;
 import com.tradeflow.order_service.enums.OrderStatus;
 import com.tradeflow.order_service.enums.OrderSide;
 import com.tradeflow.order_service.repository.OrderRepository;
@@ -36,61 +33,16 @@ public class OrderEventListener {
         public void handleFundsReserved(FundsReservedEvent event) {
                 log.info("✅ Wallet approved funds for Order ID: {}", event.getOrderId());
 
-                // 1. Update status in DB
-                orderService.updateOrderStatus(event.getOrderId(), OrderStatus.COMPLETED);
-
-                // 2. Fetch the actual order details to trigger side-effects
+                // Fetch the actual order details to check type
                 orderRepository.findById(event.getOrderId()).ifPresent(order -> {
-
-                        // Determine which price to use for financial logic
-                        // Market orders use executedPrice; Limit orders use triggerPrice
-                        BigDecimal effectivePrice = (order.getExecutedPrice() != null)
-                                        ? order.getExecutedPrice()
-                                        : order.getTriggerPrice();
-
-                        // --- WALLET CREDIT LOGIC FOR SELLS ---
-                        if (order.getSide() == OrderSide.SELL) {
-                                BigDecimal totalCredit = BigDecimal.valueOf(order.getQuantity())
-                                                .multiply(effectivePrice);
-
-                                WalletUpdateEvent walletEvent = new WalletUpdateEvent(
-                                                order.getUserId(),
-                                                totalCredit,
-                                                "CREDIT",
-                                                order.getId().toString());
-
-                                kafkaTemplate.send("wallet-balance-update-topic", walletEvent);
-                                log.info("💰 Sell order confirmed. Sending ₹{} back to Wallet.", totalCredit);
+                        // 1. Only MARKET orders complete immediately.
+                        // LIMIT/STOP_LOSS orders stay PENDING until the PriceMonitor triggers them.
+                        if (order.getType() == com.tradeflow.order_service.enums.OrderType.MARKET) {
+                                orderService.completeOrder(order.getId(), order.getExecutedPrice());
+                        } else {
+                                log.info("⏳ Order ID: {} is {} - Reserving funds/holdings and waiting for Price Trigger.",
+                                                order.getId(), order.getType());
                         }
-
-                        // 📢 3. Notify Portfolio Service to update holdings
-                        OrderCompletedEvent completedEvent = new OrderCompletedEvent(
-                                        order.getId(),
-                                        order.getUserId(),
-                                        order.getSymbol(),
-                                        order.getExchange(),
-                                        BigDecimal.valueOf(order.getQuantity()),
-                                        effectivePrice, // 👈 Added the missing price parameter
-                                        order.getSide());
-
-                        kafkaTemplate.send("order-completed-topic", completedEvent);
-                        log.info("📢 OrderCompletedEvent published for Portfolio: {}", order.getSymbol());
-
-                        // 📢 4. Notify Notification Service to dispatch HTML Confirmation Email
-                        String tradeMessage = String.format(
-                                        "Successfully executed %s order for %d shares of %s at $%.2f",
-                                        order.getSide().name(), order.getQuantity(), order.getSymbol(), effectivePrice);
-
-                        NotificationEvent notificationEvent = new NotificationEvent(
-                                        order.getUserId(),
-                                        order.getSide().name(),
-                                        tradeMessage,
-                                        order.getSymbol(),
-                                        order.getQuantity(),
-                                        effectivePrice.doubleValue());
-
-                        kafkaTemplate.send("notification-topic", notificationEvent);
-                        log.info("📧 NotificationEvent published for Email Dispatch: User ID {}", order.getUserId());
                 });
         }
 

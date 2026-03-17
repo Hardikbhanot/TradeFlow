@@ -1,18 +1,15 @@
 package com.tradeflow.order_service.scheduler;
-import com.tradeflow.order_service.dto.OrderCompletedEvent;
 import com.tradeflow.order_service.enums.OrderSide;
 import com.tradeflow.order_service.enums.OrderStatus;
 import com.tradeflow.order_service.repository.OrderRepository;
 import com.tradeflow.order_service.client.MarketClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import com.tradeflow.order_service.enums.OrderType;
-import com.tradeflow.order_service.dto.OrderRequest;
 import com.tradeflow.order_service.entity.Order;
 
 
@@ -22,14 +19,14 @@ public class PriceMonitorScheduler {
 
     private final OrderRepository orderRepository;
     private final MarketClient marketClient;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final com.tradeflow.order_service.service.OrderService orderService;
 
     public PriceMonitorScheduler(OrderRepository orderRepository, 
                                  MarketClient marketClient, 
-                                 KafkaTemplate<String, Object> kafkaTemplate) {
+                                 com.tradeflow.order_service.service.OrderService orderService) {
         this.orderRepository = orderRepository;
         this.marketClient = marketClient;
-        this.kafkaTemplate = kafkaTemplate;
+        this.orderService = orderService;
     }
 
     // Runs every 10 seconds
@@ -56,33 +53,28 @@ public class PriceMonitorScheduler {
     }
 
     private boolean shouldExecute(Order order, BigDecimal currentPrice) {
-        if (order.getSide() == OrderSide.BUY) {
-            // BUY LIMIT: Execute if market price is AT or BELOW your target
-            return currentPrice.compareTo(order.getTriggerPrice()) <= 0;
-        } else {
-            // SELL LIMIT: Execute if market price is AT or ABOVE your target
-            return currentPrice.compareTo(order.getTriggerPrice()) >= 0;
+        if (order.getType() == OrderType.LIMIT) {
+            if (order.getSide() == OrderSide.BUY) {
+                // BUY LIMIT: Price falls to or below target (Buy discount)
+                return currentPrice.compareTo(order.getTriggerPrice()) <= 0;
+            } else {
+                // SELL LIMIT: Price rises to or above target (Sell profit)
+                return currentPrice.compareTo(order.getTriggerPrice()) >= 0;
+            }
+        } else if (order.getType() == OrderType.STOP_LOSS) {
+            if (order.getSide() == OrderSide.BUY) {
+                // BUY STOP LOSS: Price rises above resistance (Breakout buy)
+                return currentPrice.compareTo(order.getTriggerPrice()) >= 0;
+            } else {
+                // SELL STOP LOSS: Price drops below floor (Stop loss)
+                return currentPrice.compareTo(order.getTriggerPrice()) <= 0;
+            }
         }
+        return false;
     }
 
     private void executeOrder(Order order, BigDecimal currentPrice) {
         log.info("🎯 TRIGGER HIT! Executing {} for {} at ₹{}", order.getSide(), order.getSymbol(), currentPrice);
-        
-        order.setStatus(OrderStatus.COMPLETED);
-        order.setExecutedPrice(currentPrice);
-        orderRepository.save(order);
-
- 
-        OrderCompletedEvent event = new OrderCompletedEvent(
-    order.getId(),
-    order.getUserId(),
-    order.getSymbol(),
-    order.getExchange(),
-    BigDecimal.valueOf(order.getQuantity()), 
-    currentPrice,
-    order.getSide()
-);
-        
-        kafkaTemplate.send("order-completed-topic", event);
+        orderService.completeOrder(order.getId(), currentPrice);
     }
 }

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useWebSocket } from '../hooks/useWebSocket';
+import StockChart from '../components/StockChart';
 
 function Toast({ toasts }) {
     return (
@@ -27,6 +29,8 @@ export default function DashboardPage() {
     const [side, setSide] = useState('BUY');
     const [orderForm, setOrderForm] = useState({ symbol: '', quantity: '', exchange: 'NSE', orderType: 'MARKET', pricePerUnit: '' });
     const [placing, setPlacing] = useState(false);
+    const { marketData, orderUpdates } = useWebSocket(user?.userId);
+    const [chartData, setChartData] = useState({});
 
     function addToast(msg, type = 'success') {
         const id = Date.now();
@@ -52,17 +56,11 @@ export default function DashboardPage() {
         } catch {}
     }, [user]);
 
-    const fetchPrices = useCallback(async (syms) => {
-        if (!syms.length) return;
-        const results = {};
-        for (const sym of syms) {
-            try {
-                const r = await api.get(`/api/v1/market/price/${sym}`);
-                results[sym] = r.data;
-            } catch { results[sym] = null; }
-            await new Promise(resolve => setTimeout(resolve, 300));
-        }
-        setPrices(p => ({ ...p, ...results }));
+    const fetchChartData = useCallback(async (sym) => {
+        try {
+            const res = await api.get(`/api/v1/market/history/${sym}?range=TODAY`);
+            setChartData(prev => ({ ...prev, [sym]: res.data }));
+        } catch {}
     }, []);
 
     useEffect(() => {
@@ -72,12 +70,21 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (holdings.length) {
-            const syms = [...new Set(holdings.map(h => h.symbol))];
-            fetchPrices(syms);
-            const id = setInterval(() => fetchPrices(syms), 15000);
-            return () => clearInterval(id);
+            holdings.forEach(h => {
+                if (!chartData[h.symbol]) {
+                    fetchChartData(h.symbol);
+                }
+            });
         }
-    }, [holdings, fetchPrices]);
+    }, [holdings, fetchChartData, chartData]);
+
+    useEffect(() => {
+        if (orderUpdates) {
+            addToast(`Update: ${orderUpdates.side} order for ${orderUpdates.symbol} is COMPLETED!`);
+            fetchHoldings();
+            fetchWallet();
+        }
+    }, [orderUpdates, fetchHoldings, fetchWallet]);
 
 
     const totalInvested = holdings.reduce((s, h) => s + ((h.avgPrice ?? 0) * (h.totalQuantity ?? 0)), 0);
@@ -175,7 +182,7 @@ export default function DashboardPage() {
                                     {holdings.map((h) => {
                                         const avgPrice = h.avgPrice ?? 0;
                                         const quantity = h.totalQuantity ?? 0;
-                                        const ltp = prices[h.symbol] ?? avgPrice;
+                                        const ltp = marketData[h.symbol] ?? prices[h.symbol] ?? avgPrice;
                                         const hlPnl = (ltp - avgPrice) * quantity;
                                         const pct = avgPrice ? ((ltp - avgPrice) / avgPrice) * 100 : 0;
                                         return (
@@ -183,6 +190,9 @@ export default function DashboardPage() {
                                                 <td>
                                                     <strong>{h.symbol}</strong>
                                                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{h.exchange ?? 'NSE'}</div>
+                                                    <div style={{ width: '120px', marginTop: '4px' }}>
+                                                        <StockChart data={chartData[h.symbol]} symbol={h.symbol} />
+                                                    </div>
                                                 </td>
                                                 <td>{quantity}</td>
                                                 <td>₹{fmt(avgPrice)}</td>
