@@ -21,7 +21,6 @@ This module lives at `tradeflow-backend/wallet_service` and is part of the large
 ## Prerequisites
 
 - JDK 11 or newer installed and JAVA_HOME set
-- Git (optional)
 - A relational database (MySQL, PostgreSQL, etc.) for production. The project may include an in-memory DB for development (check `application.properties`).
 
 You can use the included Maven wrapper (`./mvnw`) so Maven does not need to be installed globally.
