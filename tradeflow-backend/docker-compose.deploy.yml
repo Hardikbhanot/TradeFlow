@@ -10,6 +10,7 @@ services:
     depends_on: [discovery-server]
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - AUTH_SERVICE_URI=http://auth-service:9000
     restart: always
 
   auth-service:
