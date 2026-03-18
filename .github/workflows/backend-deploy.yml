@@ -58,14 +58,13 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: false # Disable by default until SSH secrets are set
     steps:
       - name: Deploy to Droplet via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DO_DROPLET_IP }}
+          host: 139.59.25.118
           username: root
-          key: ${{ secrets.DO_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /root/tradeflow
             docker-compose pull

@@ -40,11 +40,13 @@ services:
 
   order_service:
     image: ghcr.io/hardikbhanot/tradeflow/order_service:latest
-    depends_on: [discovery-server, kafka]
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx200m -Xms100m 
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M 
 
   notification-service:
     image: ghcr.io/hardikbhanot/tradeflow/notification-service:latest
