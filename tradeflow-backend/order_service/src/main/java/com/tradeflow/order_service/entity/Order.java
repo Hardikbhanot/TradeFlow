@@ -29,7 +29,6 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    // private BigDecimal pricePerUnit;
 
     private BigDecimal triggerPrice;
     private BigDecimal executedPrice;
