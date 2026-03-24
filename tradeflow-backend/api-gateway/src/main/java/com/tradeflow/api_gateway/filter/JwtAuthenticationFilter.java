@@ -34,7 +34,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final List<String> apiEndpointsToBeIgnored = List.of("/auth/register", "/auth/login", "/auth/verify-otp",
+        final List<String> apiEndpointsToBeIgnored = List.of(
+                "/auth/", 
+                "/api/v1/market/ws",
                 "/eureka");
 
         boolean isApiSecured = apiEndpointsToBeIgnored.stream()
