@@ -69,9 +69,9 @@ public class OrderService {
             // Fetch current (mock) price for immediate execution
             BigDecimal currentPrice = marketClient.getLivePrice(request.getSymbol());
             order.setExecutedPrice(currentPrice);
-            order.setStatus(OrderStatus.COMPLETED); // Or PROCESSING if using full Saga
+            order.setStatus(OrderStatus.PROCESSING); // Step 1: Flag as processing
             priceForReservation = currentPrice;
-            log.info("Market order executed at current price: ₹{}", currentPrice);
+            log.info("Market order created in PROCESSING state at: ₹{}", currentPrice);
         } else {
             // Limit Order logic
             order.setTriggerPrice(request.getTriggerPrice());
@@ -113,6 +113,12 @@ public class OrderService {
 
         if (order.getStatus() == OrderStatus.COMPLETED) {
             log.warn("Order {} is already completed. Skipping.", orderId);
+            return;
+        }
+
+        // Allow completion if it was PENDING (Limit order) or PROCESSING (Market order)
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.PROCESSING) {
+            log.warn("Order {} is in state {} which cannot be completed. Skipping.", orderId, order.getStatus());
             return;
         }
 
