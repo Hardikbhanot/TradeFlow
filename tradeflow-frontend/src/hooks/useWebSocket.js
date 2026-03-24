@@ -2,8 +2,12 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-const SOCKET_URL = 'http://localhost:8085/ws/market';
-
+const getSocketUrl = () => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    // Remove trailing slash if present
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    return `${cleanBaseUrl}/api/v1/market/ws`;
+};
 export const useWebSocket = (userId) => {
     const [marketData, setMarketData] = useState({});
     const [orderUpdates, setOrderUpdates] = useState(null);
@@ -11,7 +15,7 @@ export const useWebSocket = (userId) => {
 
     useEffect(() => {
         const client = new Client({
-            webSocketFactory: () => new SockJS(SOCKET_URL),
+            webSocketFactory: () => new SockJS(getSocketUrl()),
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,

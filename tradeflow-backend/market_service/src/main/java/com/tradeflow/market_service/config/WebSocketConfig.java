@@ -22,6 +22,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // The endpoint the React frontend will connect to
-        registry.addEndpoint("/ws/market").setAllowedOriginPatterns("*").withSockJS();
+        registry.addEndpoint("/api/v1/market/ws").setAllowedOriginPatterns("*").withSockJS();
     }
 }
