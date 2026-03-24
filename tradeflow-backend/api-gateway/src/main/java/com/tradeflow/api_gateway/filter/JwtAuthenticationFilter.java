@@ -128,6 +128,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         System.err.println("🚨 Unauthorized Access! " + err);
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json");
+        response.setHeader("Access-Control-Allow-Origin", "https://tradeflow.hbhanot.tech");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Credentials", "true");
         response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + err + "\"}");
     }
 }
