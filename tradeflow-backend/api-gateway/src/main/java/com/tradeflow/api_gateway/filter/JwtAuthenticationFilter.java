@@ -57,6 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             final String jwtToken = token.substring(7);
 
+            String userId = null;
             try {
                 Claims claims = Jwts.parserBuilder()
                         .setSigningKey(secretKey)
@@ -64,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .parseClaimsJws(jwtToken)
                         .getBody();
 
-                String userId = claims.getSubject();
+                userId = claims.getSubject();
 
                 // 🔥 Phase 5 Part 2: Gateway Security Sub-Filter 🔥
                 // Ensure users cannot access other users' specific path resources
@@ -80,41 +81,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
 
-                // Create a request wrapper to add the X-User-Id header dynamically
-                HttpServletRequestWrapper modifiedRequest = new HttpServletRequestWrapper(request) {
-                    @Override
-                    public String getHeader(String name) {
-                        if ("X-User-Id".equalsIgnoreCase(name)) {
-                            return userId;
-                        }
-                        return super.getHeader(name);
-                    }
-
-                    @Override
-                    public Enumeration<String> getHeaders(String name) {
-                        if ("X-User-Id".equalsIgnoreCase(name)) {
-                            return Collections.enumeration(Collections.singletonList(userId));
-                        }
-                        return super.getHeaders(name);
-                    }
-
-                    @Override
-                    public Enumeration<String> getHeaderNames() {
-                        List<String> names = Collections.list(super.getHeaderNames());
-                        names.add("X-User-Id");
-                        return Collections.enumeration(names);
-                    }
-                };
-
-                System.out.println(
-                        "✅ JWT Validated successfully for UserId: " + userId + ". Forwarding request downstream.");
-                filterChain.doFilter(modifiedRequest, response);
-                return;
-
             } catch (Exception e) {
                 onError(response, "Authorization header is invalid: " + e.getMessage());
                 return;
             }
+
+            final String userIdFinal = userId;
+
+            // Create a request wrapper to add the X-User-Id header dynamically
+            HttpServletRequestWrapper modifiedRequest = new HttpServletRequestWrapper(request) {
+                @Override
+                public String getHeader(String name) {
+                    if ("X-User-Id".equalsIgnoreCase(name)) {
+                        return userIdFinal;
+                    }
+                    return super.getHeader(name);
+                }
+
+                @Override
+                public Enumeration<String> getHeaders(String name) {
+                    if ("X-User-Id".equalsIgnoreCase(name)) {
+                        return Collections.enumeration(Collections.singletonList(userIdFinal));
+                    }
+                    return super.getHeaders(name);
+                }
+
+                @Override
+                public Enumeration<String> getHeaderNames() {
+                    List<String> names = Collections.list(super.getHeaderNames());
+                    names.add("X-User-Id");
+                    return Collections.enumeration(names);
+                }
+            };
+
+            System.out.println(
+                    "✅ JWT Validated successfully for UserId: " + userIdFinal + ". Forwarding request downstream.");
+            filterChain.doFilter(modifiedRequest, response);
+            return;
         }
 
         System.out.println("⚠️ Bypassing JWT Check for public endpoint: " + request.getRequestURI());
