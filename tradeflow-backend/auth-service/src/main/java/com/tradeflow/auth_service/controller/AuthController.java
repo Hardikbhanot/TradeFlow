@@ -61,12 +61,10 @@ public class AuthController {
 
             String otpCode = String.format("%06d", new Random().nextInt(999999));
 
-            try {
-                otpRepository.deleteByUsername(username);
+            otpRepository.findByUsername(username).ifPresent(existingOtp -> {
+                otpRepository.delete(existingOtp);
                 otpRepository.flush();
-            } catch (Exception e) {
-                // Ignore if it doesn't exist or concurrent delete
-            }
+            });
 
             OtpEntity otpEntity = new OtpEntity();
             otpEntity.setUsername(username);
