@@ -123,6 +123,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void onError(HttpServletResponse response, String err) throws IOException {
         System.err.println("🚨 Unauthorized Access! " + err);
-        response.sendError(HttpStatus.UNAUTHORIZED.value(), err);
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + err + "\"}");
     }
 }
