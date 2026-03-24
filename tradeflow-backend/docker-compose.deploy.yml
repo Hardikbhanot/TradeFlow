@@ -15,7 +15,7 @@ services:
 
   auth-service:
     image: ghcr.io/hardikbhanot/tradeflow/auth-service:latest
-    depends_on: [discovery-server]
+    depends_on: [discovery-server, redis]
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
@@ -23,6 +23,10 @@ services:
       - AUTH_DB_USERNAME=${AUTH_DB_USERNAME}
       - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_DATA_REDIS_HOST=redis
+      - UPSTOX_API_KEY=${UPSTOX_API_KEY}
+      - UPSTOX_API_SECRET=${UPSTOX_API_SECRET}
+      - UPSTOX_REDIRECT_URI=${UPSTOX_REDIRECT_URI}
     restart: always
 
   user-service:
