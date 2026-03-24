@@ -2,6 +2,8 @@ services:
   discovery-server:
     image: ghcr.io/hardikbhanot/tradeflow/discovery-server:latest
     ports: ["8761:8761"]
+    environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
     restart: always
 
   api-gateway:
@@ -9,6 +11,7 @@ services:
     ports: ["8080:8080"]
     depends_on: [discovery-server]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - AUTH_SERVICE_URI=http://auth-service:9000
     restart: always
@@ -17,6 +20,7 @@ services:
     image: ghcr.io/hardikbhanot/tradeflow/auth-service:latest
     depends_on: [discovery-server, redis]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
       - AUTH_DB_URL=${AUTH_DB_URL}
@@ -33,6 +37,7 @@ services:
     image: ghcr.io/hardikbhanot/tradeflow/user_service:latest
     depends_on: [discovery-server]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - USER_DB_URL=${USER_DB_URL}
       - USER_DB_USERNAME=${USER_DB_USERNAME}
@@ -43,6 +48,7 @@ services:
     image: ghcr.io/hardikbhanot/tradeflow/wallet_service:latest
     depends_on: [discovery-server]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - WALLET_DB_URL=${WALLET_DB_URL}
       - WALLET_DB_USERNAME=${WALLET_DB_USERNAME}
@@ -55,6 +61,7 @@ services:
     ports: ["8085:8085"]
     depends_on: [discovery-server, kafka, redis]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_DATA_REDIS_HOST=redis
@@ -68,6 +75,7 @@ services:
     image: ghcr.io/hardikbhanot/tradeflow/portfolio_service:latest
     depends_on: [discovery-server, kafka, redis]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_DATA_REDIS_HOST=redis
       - PORTFOLIO_DB_URL=${PORTFOLIO_DB_URL}
@@ -80,6 +88,7 @@ services:
     image: ghcr.io/hardikbhanot/tradeflow/order_service:latest
     depends_on: [discovery-server, kafka]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - ORDER_DB_URL=${ORDER_DB_URL}
@@ -91,6 +100,7 @@ services:
     image: ghcr.io/hardikbhanot/tradeflow/notification-service:latest
     depends_on: [discovery-server, kafka]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - NOTIFICATION_DB_URL=${AUTH_DB_URL}
