@@ -92,7 +92,15 @@ public class MarketService {
                     .create("https://api.upstox.com/v2/market-quote/quotes?instrument_key=" + encodedSymbol);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            
+            // Check Redis first for a fresh token
+            String activeToken = (String) redisTemplate.opsForValue().get("upstox:access_token");
+            if (activeToken == null) {
+                log.debug("No Redis token found, falling back to ENV token.");
+                activeToken = accessToken;
+            }
+
+            headers.set("Authorization", "Bearer " + activeToken);
             headers.set("Accept", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -147,7 +155,14 @@ public class MarketService {
                     .create("https://api.upstox.com/v2/market-quote/quotes?instrument_key=" + encodedKeys);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            
+            // Check Redis first for a fresh token
+            String activeToken = (String) redisTemplate.opsForValue().get("upstox:access_token");
+            if (activeToken == null) {
+                activeToken = accessToken;
+            }
+
+            headers.set("Authorization", "Bearer " + activeToken);
             headers.set("Accept", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);

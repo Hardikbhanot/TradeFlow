@@ -105,15 +105,26 @@ export default function SymbolSearch({ onSelect }) {
                                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                             >
                                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{symbol}</div>
-                                <button className="btn btn-green" style={{ padding: '2px 8px', fontSize: '0.65rem' }}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/orders?symbol=${symbol}`);
-                                        setIsFocused(false);
-                                        setQuery('');
-                                    }}>
-                                    BUY
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button className="btn btn-outline" style={{ padding: '2px 8px', fontSize: '0.65rem', borderColor: 'var(--accent)' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (onSelect) onSelect(symbol);
+                                            setIsFocused(false);
+                                            setQuery('');
+                                        }}>
+                                        Watchlist
+                                    </button>
+                                    <button className="btn btn-green" style={{ padding: '2px 8px', fontSize: '0.65rem' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/orders?symbol=${symbol}`);
+                                            setIsFocused(false);
+                                            setQuery('');
+                                        }}>
+                                        BUY
+                                    </button>
+                                </div>
                             </div>
                         ))
                     ) : !loading && (

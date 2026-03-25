@@ -2,6 +2,8 @@ services:
   discovery-server:
     image: ghcr.io/hardikbhanot/tradeflow/discovery-server:latest
     ports: ["8761:8761"]
+    environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
     restart: always
 
   api-gateway:
@@ -9,51 +11,101 @@ services:
     ports: ["8080:8080"]
     depends_on: [discovery-server]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - AUTH_SERVICE_URI=http://auth-service:9000
     restart: always
 
   auth-service:
     image: ghcr.io/hardikbhanot/tradeflow/auth-service:latest
-    depends_on: [discovery-server]
+    depends_on: [discovery-server, redis]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
+      - AUTH_DB_URL=${AUTH_DB_URL}
+      - AUTH_DB_USERNAME=${AUTH_DB_USERNAME}
+      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_DATA_REDIS_HOST=redis
+      - UPSTOX_API_KEY=${UPSTOX_API_KEY}
+      - UPSTOX_API_SECRET=${UPSTOX_API_SECRET}
+      - UPSTOX_REDIRECT_URI=${UPSTOX_REDIRECT_URI}
     restart: always
 
-  market_service:
+  user-service:
+    image: ghcr.io/hardikbhanot/tradeflow/user_service:latest
+    depends_on: [discovery-server]
+    environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - USER_DB_URL=${USER_DB_URL}
+      - USER_DB_USERNAME=${USER_DB_USERNAME}
+      - USER_DB_PASSWORD=${USER_DB_PASSWORD}
+    restart: always
+
+  wallet-service:
+    image: ghcr.io/hardikbhanot/tradeflow/wallet_service:latest
+    depends_on: [discovery-server]
+    environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - WALLET_DB_URL=${WALLET_DB_URL}
+      - WALLET_DB_USERNAME=${WALLET_DB_USERNAME}
+      - WALLET_DB_PASSWORD=${WALLET_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    restart: always
+
+  market-service:
     image: ghcr.io/hardikbhanot/tradeflow/market_service:latest
     ports: ["8085:8085"]
     depends_on: [discovery-server, kafka, redis]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_DATA_REDIS_HOST=redis
+      - UPSTOX_API_KEY=${UPSTOX_API_KEY}
+      - UPSTOX_API_SECRET=${UPSTOX_API_SECRET}
+      - UPSTOX_ACCESS_TOKEN=${UPSTOX_ACCESS_TOKEN}
+      - UPSTOX_REDIRECT_URI=${UPSTOX_REDIRECT_URI}
     restart: always
 
-  portfolio_service:
+  portfolio-service:
     image: ghcr.io/hardikbhanot/tradeflow/portfolio_service:latest
-    depends_on: [discovery-server]
+    depends_on: [discovery-server, kafka, redis]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_DATA_REDIS_HOST=redis
+      - PORTFOLIO_DB_URL=${PORTFOLIO_DB_URL}
+      - PORTFOLIO_DB_USERNAME=${PORTFOLIO_DB_USERNAME}
+      - PORTFOLIO_DB_PASSWORD=${PORTFOLIO_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     restart: always
 
-  order_service:
+  order-service:
     image: ghcr.io/hardikbhanot/tradeflow/order_service:latest
+    depends_on: [discovery-server, kafka]
     environment:
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx200m -Xms100m 
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-    deploy:
-      resources:
-        limits:
-          memory: 300M 
+      - ORDER_DB_URL=${ORDER_DB_URL}
+      - ORDER_DB_USERNAME=${ORDER_DB_USERNAME}
+      - ORDER_DB_PASSWORD=${ORDER_DB_PASSWORD}
+    restart: always
 
   notification-service:
     image: ghcr.io/hardikbhanot/tradeflow/notification-service:latest
     depends_on: [discovery-server, kafka]
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - NOTIFICATION_DB_URL=${AUTH_DB_URL}
+      - NOTIFICATION_DB_USERNAME=${AUTH_DB_USERNAME}
+      - NOTIFICATION_DB_PASSWORD=${AUTH_DB_PASSWORD}
     restart: always
 
   kafka:

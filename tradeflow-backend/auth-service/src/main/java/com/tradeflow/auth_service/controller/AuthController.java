@@ -61,9 +61,12 @@ public class AuthController {
 
             String otpCode = String.format("%06d", new Random().nextInt(999999));
 
+            otpRepository.findByUsername(username).ifPresent(existingOtp -> {
+                otpRepository.delete(existingOtp);
+                otpRepository.flush();
+            });
 
-            OtpEntity otpEntity = otpRepository.findByUsername(username)
-                    .orElseGet(OtpEntity::new);
+            OtpEntity otpEntity = new OtpEntity();
             otpEntity.setUsername(username);
             otpEntity.setOtpCode(otpCode);
             otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(5));

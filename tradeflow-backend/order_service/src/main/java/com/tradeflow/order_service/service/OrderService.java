@@ -131,6 +131,12 @@ public class OrderService {
             return;
         }
 
+        // Allow completion if it was PENDING (Limit order) or PROCESSING (Market order)
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.PROCESSING) {
+            log.warn("Order {} is in state {} which cannot be completed. Skipping.", orderId, order.getStatus());
+            return;
+        }
+
         log.info("🎯 Completing Order ID: {} ({}) at ₹{}", orderId, order.getType(), executedPrice);
 
         // 1. Update status in DB
