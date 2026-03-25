@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth/upstox")
@@ -35,11 +36,35 @@ public class UpstoxAuthController {
     }
 
     /**
+     * Checks if a valid token exists in Redis.
+     */
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> getBrokerStatus() {
+        String token = redisTemplate.opsForValue().get(REDIS_TOKEN_KEY);
+        boolean isConnected = (token != null && !token.isBlank());
+        
+        return ResponseEntity.ok(Map.of(
+            "connected", isConnected,
+            "broker", "Upstox",
+            "expiresIn", isConnected ? "Check Redis TTL" : "N/A"
+        ));
+    }
+
+    /**
+     * Helper to get the auth URL for the frontend.
+     */
+    @GetMapping("/login-url")
+    public ResponseEntity<Map<String, String>> getUpstoxLoginUrl() {
+        String url = "https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id="
+                + apiKey + "&redirect_uri=" + redirectUri;
+        return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    /**
      * Handles the redirect from Upstox after the user logs in.
-     * Request URL: /auth/upstox/callback?code=XXXX
      */
     @GetMapping("/callback")
-    public ResponseEntity<String> handleCallback(@RequestParam String code) {
+    public ResponseEntity<?> handleCallback(@RequestParam String code) {
         log.info("📥 Received Upstox Auth Code. Attempting token exchange...");
 
         try {
@@ -68,7 +93,15 @@ public class UpstoxAuthController {
                     // Save to Redis with 24h TTL
                     redisTemplate.opsForValue().set(REDIS_TOKEN_KEY, accessToken, Duration.ofHours(24));
                     log.info("✅ Upstox Access Token successfully saved to Redis!");
-                    return ResponseEntity.ok("Upstox Connection Successful! You can close this window. Token saved for 24 hours.");
+
+                    // Redirect back to frontend dashboard
+                    String frontendUrl = redirectUri.contains("localhost") 
+                        ? "http://localhost:5173/dashboard" 
+                        : "https://tradeflow.hbhanot.tech/dashboard";
+
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(java.net.URI.create(frontendUrl))
+                            .build();
                 }
             }
             
