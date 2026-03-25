@@ -82,19 +82,21 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="auth-page">
-            <div className="auth-card">
-                <div className="auth-logo">▲ TradeFlow</div>
-                <div className="auth-subtitle">
+        <div className="auth-container">
+            <div className="auth-card-v2">
+                <div className="auth-logo-large">
+                    <span style={{ color: 'var(--primary)' }}>▲</span> TradeFlow
+                </div>
+                <div className="auth-subtitle-v2">
                     {otpStep ? 'Enter the 6-digit code sent to your email.' : 'Welcome back. Sign in to your account.'}
                 </div>
 
-                {error && <div className="auth-error">{error}</div>}
+                {error && <div className="auth-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
 
                 {!otpStep ? (
                     <form className="auth-form" onSubmit={handlePasswordSubmit}>
                         <div className="form-group">
-                            <label>Username</label>
+                            <label className="auth-label">Username</label>
                             <input
                                 className="form-input"
                                 type="text"
@@ -105,8 +107,8 @@ export default function LoginPage() {
                                 autoFocus
                             />
                         </div>
-                        <div className="form-group">
-                            <label>Password</label>
+                        <div className="form-group" style={{ marginBottom: '2rem' }}>
+                            <label className="auth-label">Password</label>
                             <input
                                 className="form-input"
                                 type="password"
@@ -116,18 +118,18 @@ export default function LoginPage() {
                                 required
                             />
                         </div>
-                        <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
+                        <button className="btn-auth-primary" type="submit" disabled={loading}>
                             {loading ? 'Signing in…' : 'Continue →'}
                         </button>
                     </form>
                 ) : (
                     <form className="auth-form" onSubmit={handleOtpVerify}>
                         <div className="form-group">
-                            <label>Email</label>
+                            <label className="auth-label">Email</label>
                             <input className="form-input" value={otpEmail || 'Registered email'} disabled />
                         </div>
-                        <div className="form-group">
-                            <label>OTP</label>
+                        <div className="form-group" style={{ marginBottom: '2rem' }}>
+                            <label className="auth-label">OTP</label>
                             <input
                                 className="form-input"
                                 type="text"
@@ -139,12 +141,13 @@ export default function LoginPage() {
                                 autoFocus
                             />
                         </div>
-                        <button className="btn btn-primary btn-full" type="submit" disabled={loading || form.otp.length !== 6}>
+                        <button className="btn-auth-primary" type="submit" disabled={loading || form.otp.length !== 6}>
                             {loading ? 'Verifying…' : 'Verify OTP →'}
                         </button>
                         <button
                             type="button"
                             className="btn btn-ghost btn-full"
+                            style={{ marginTop: '1rem' }}
                             onClick={() => {
                                 setOtpStep(false);
                                 setForm(f => ({ ...f, password: '', otp: '' }));
@@ -156,11 +159,9 @@ export default function LoginPage() {
                     </form>
                 )}
 
-                {!otpStep && (
-                    <div className="auth-switch">
-                        Don't have an account?<Link to="/register">Create one</Link>
-                    </div>
-                )}
+                <div className="auth-footer">
+                    Don't have an account? <Link to="/register">Create one</Link>
+                </div>
             </div>
         </div>
     );

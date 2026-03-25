@@ -24,10 +24,6 @@ export default function OrdersPage() {
     const [placing, setPlacing] = useState(false);
     const [result, setResult] = useState(null);
 
-    async function fetchPrice() {
-        fetchPriceForSym(form.symbol);
-    }
-
     async function fetchPriceForSym(symbol) {
         if (!symbol.trim()) return;
         setFetchingPrice(true);
@@ -40,6 +36,10 @@ export default function OrdersPage() {
         } catch { setLivePrice('N/A'); }
         finally { setFetchingPrice(false); }
     }
+
+    useEffect(() => {
+        if (initialSymbol) fetchPriceForSym(initialSymbol);
+    }, [initialSymbol]);
 
     async function confirmOrder() {
         setPlacing(true);
@@ -73,73 +73,69 @@ export default function OrdersPage() {
         ? (parseFloat(form.pricePerUnit) * parseInt(form.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2 })
         : '—';
 
-    const fmt = n => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt = n => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
     return (
         <Layout title="Place Order">
             <div className="page-header">
-                <h1>Place Order</h1>
-                <p>Execute trades at market or limit prices.</p>
+                <h1>Execution Terminal</h1>
+                <p>Deploy capital with high-precision KINETIC execution controls.</p>
             </div>
 
-            <div style={{ maxWidth: 560 }}>
+            <div style={{ maxWidth: 640, margin: '0 auto' }}>
                 {result && (
                     <div style={{
-                        background: result.ok ? 'var(--green-dim)' : 'var(--red-dim)',
+                        background: result.ok ? 'rgba(0,255,150,0.1)' : 'rgba(255,0,80,0.1)',
                         color: result.ok ? 'var(--green)' : 'var(--red)',
-                        border: `1px solid ${result.ok ? 'var(--green)' : 'var(--red)'}`,
-                        borderRadius: 'var(--radius)', padding: '0.75rem 1rem',
-                        marginBottom: '1rem', fontSize: '0.88rem'
+                        padding: '1rem', borderRadius: '12px', border: `1px solid ${result.ok ? 'var(--green)' : 'var(--red)'}`,
+                        marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center'
                     }}>
                         {result.msg}
                     </div>
                 )}
 
-                <div className="card">
-
-                    <div className="tab-row" style={{ marginBottom: '1.25rem' }}>
+                <div className="card" style={{ padding: '2rem' }}>
+                    <div className="tab-row" style={{ marginBottom: '2rem' }}>
                         {SIDES.map(s => (
                             <button key={s} type="button"
                                 className={`order-tab ${s.toLowerCase()} ${form.side === s ? 'active' : ''}`}
+                                style={{ flex: 1, padding: '12px' }}
                                 onClick={() => setForm(f => ({ ...f, side: s }))}>
                                 {s}
                             </button>
                         ))}
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
-                            <div className="form-group" style={{ flex: 1 }}>
-                                <label>Symbol Search</label>
-                                <SymbolSearch onSelect={(sym) => {
-                                    setForm(f => ({ ...f, symbol: sym }));
-                                    setLivePrice(null);
-                                    fetchPriceForSym(sym);
-                                }} />
-                                {form.symbol && (
-                                    <div style={{ marginTop: '6px', fontSize: '0.8rem', color: 'var(--blue)', fontWeight: 600 }}>
-                                        Selected: {form.symbol}
-                                    </div>
-                                )}
-                            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div className="form-group">
+                            <label className="auth-label">Asset Search</label>
+                            <SymbolSearch onSelect={(sym) => {
+                                setForm(f => ({ ...f, symbol: sym }));
+                                setLivePrice(null);
+                                fetchPriceForSym(sym);
+                            }} />
+                            {form.symbol && (
+                                <div style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>
+                                    SELECTED: {form.symbol.toUpperCase()}
+                                </div>
+                            )}
                         </div>
 
                         {livePrice && (
-                            <div style={{ background: 'var(--surface2)', borderRadius: 'var(--radius)', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Live Price</span>
-                                <span style={{ fontWeight: 700, color: 'var(--green)' }}>₹{typeof livePrice === 'number' ? fmt(livePrice) : livePrice}</span>
+                            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Real-time LTP</span>
+                                <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--green)' }}>₹{typeof livePrice === 'number' ? fmt(livePrice) : livePrice}</span>
                             </div>
                         )}
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label>Quantity</label>
-                                <input className="form-input" type="number" min="1" placeholder="1" value={form.quantity}
+                                <label className="auth-label">Quantity</label>
+                                <input className="form-input" type="number" min="1" placeholder="0" value={form.quantity}
                                     onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
                             </div>
                             <div className="form-group">
-                                <label>Exchange</label>
+                                <label className="auth-label">Exchange</label>
                                 <select className="form-input" value={form.exchange}
                                     onChange={e => setForm(f => ({ ...f, exchange: e.target.value }))}>
                                     {EXCHANGES.map(ex => <option key={ex}>{ex}</option>)}
@@ -148,16 +144,25 @@ export default function OrdersPage() {
                         </div>
 
                         <div className="form-group">
-                            <label>Order Type</label>
-                            <select className="form-input" value={form.orderType}
-                                onChange={e => setForm(f => ({ ...f, orderType: e.target.value }))}>
-                                {ORDER_TYPES.map(t => <option key={t}>{t}</option>)}
-                            </select>
+                            <label className="auth-label">Order Type</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {ORDER_TYPES.map(t => (
+                                    <button 
+                                        key={t}
+                                        type="button"
+                                        className={`btn ${form.orderType === t ? 'btn-primary-dim' : 'btn-ghost'}`}
+                                        style={{ flex: 1, fontSize: '0.7rem' }}
+                                        onClick={() => setForm(f => ({ ...f, orderType: t }))}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {form.orderType !== 'MARKET' && (
                             <div className="form-group">
-                                <label>Price per Unit (₹)</label>
+                                <label className="auth-label">Limit Price (₹)</label>
                                 <input className="form-input" type="number" step="0.01" placeholder="0.00" value={form.pricePerUnit}
                                     onChange={e => setForm(f => ({ ...f, pricePerUnit: e.target.value }))} />
                             </div>
@@ -165,59 +170,57 @@ export default function OrdersPage() {
 
                         {form.orderType === 'STOP_LOSS' && (
                             <div className="form-group">
-                                <label>Trigger Price (₹)</label>
+                                <label className="auth-label">Trigger Price (₹)</label>
                                 <input className="form-input" type="number" step="0.01" placeholder="0.00" value={form.triggerPrice}
                                     onChange={e => setForm(f => ({ ...f, triggerPrice: e.target.value }))} />
                             </div>
                         )}
 
-
-                        <div style={{ background: 'var(--surface2)', borderRadius: 'var(--radius)', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Estimated Total</span>
-                            <span style={{ fontWeight: 700 }}>₹{totalEstimate}</span>
+                        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', marginTop: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Estimated Capital Required</span>
+                                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>₹{totalEstimate}</span>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>*Excluding brokerage and SEBI charges.</div>
                         </div>
 
                         <button
                             className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
+                            style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
                             onClick={() => setShowConfirm(true)}
                             disabled={!form.symbol || !form.quantity}
                         >
-                            Review {form.side} Order →
+                            REVIEW {form.side} ORDER →
                         </button>
                     </div>
                 </div>
             </div>
 
-
+            {/* KINETIC Confirmation Modal */}
             {showConfirm && (
-                <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-                }}>
-                    <div className="card" style={{ width: 360, border: '1px solid var(--border2)' }}>
-                        <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: '1rem' }}>
-                            Confirm {form.side} Order
+                <div className="modal-overlay">
+                    <div className="card" style={{ width: 420, padding: '2rem', background: 'rgba(10,14,18,0.95)', border: '1px solid var(--primary)' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--primary)', textAlign: 'center' }}>
+                            CONFIRM {form.side} EXECUTION
                         </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {[
-                                ['Symbol', form.symbol.toUpperCase()],
-                                ['Side', form.side],
-                                ['Type', form.orderType],
-                                ['Quantity', form.quantity],
-                                ['Exchange', form.exchange],
-                                ['Est. Total', `₹${totalEstimate}`],
+                                ['SYMBOL', form.symbol.toUpperCase()],
+                                ['QUANTITY', form.quantity],
+                                ['ORDER TYPE', form.orderType],
+                                ['EST. TOTAL', `₹${totalEstimate}`],
                             ].map(([l, v]) => (
-                                <tr key={l} style={{ borderBottom: '1px solid var(--border)' }}>
-                                    <td style={{ padding: '0.5rem 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{l}</td>
-                                    <td style={{ padding: '0.5rem 0', fontWeight: 600, textAlign: 'right' }}>{v}</td>
-                                </tr>
+                                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{l}</span>
+                                    <span style={{ fontWeight: 700 }}>{v}</span>
+                                </div>
                             ))}
-                        </table>
-                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
-                            <button className="btn btn-ghost btn-full" onClick={() => setShowConfirm(false)}>Cancel</button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                            <button className="btn btn-ghost btn-full" onClick={() => setShowConfirm(false)}>CANCEL</button>
                             <button className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
                                 onClick={confirmOrder} disabled={placing}>
-                                {placing ? 'Placing…' : 'Confirm'}
+                                {placing ? 'EXECUTING...' : 'CONFIRM ORDER'}
                             </button>
                         </div>
                     </div>

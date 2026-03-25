@@ -39,6 +39,7 @@ export default function DashboardPage() {
     const [showTradeDesk, setShowTradeDesk] = useState(false);
     const { marketData, orderUpdates } = useWebSocket(user?.userId);
     const [chartData, setChartData] = useState({});
+    const [ledgerTab, setLedgerTab] = useState('REAL-TIME');
 
     function addToast(msg, type = 'success') {
         const id = Date.now();
@@ -220,8 +221,20 @@ export default function DashboardPage() {
                                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                         <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Activity Ledger</span>
                                         <div style={{ background: 'var(--surface)', padding: '4px', borderRadius: '6px', display: 'flex', gap: '4px' }}>
-                                            <button className="btn" style={{ fontSize: '0.65rem', padding: '4px 12px', background: 'var(--primary-dim)', color: 'var(--primary)' }}>REAL-TIME</button>
-                                            <button className="btn" style={{ fontSize: '0.65rem', padding: '4px 12px', background: 'transparent', color: 'var(--text-muted)' }}>REPORTS</button>
+                                            <button 
+                                                className="btn" 
+                                                style={{ fontSize: '0.65rem', padding: '4px 12px', background: ledgerTab === 'REAL-TIME' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REAL-TIME' ? 'var(--primary)' : 'var(--text-muted)' }}
+                                                onClick={() => setLedgerTab('REAL-TIME')}
+                                            >
+                                                REAL-TIME
+                                            </button>
+                                            <button 
+                                                className="btn" 
+                                                style={{ fontSize: '0.65rem', padding: '4px 12px', background: ledgerTab === 'REPORTS' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REPORTS' ? 'var(--primary)' : 'var(--text-muted)' }}
+                                                onClick={() => setLedgerTab('REPORTS')}
+                                            >
+                                                REPORTS
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -294,21 +307,21 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="dashboard-right">
-                            <div className="card" style={{ alignSelf: 'start' }}>
-                                <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>Broker Connection</span>
-                                    {loadingBroker ? null : (
-                                        <span className={`badge ${brokerStatus.connected ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.65rem' }}>
-                                            {brokerStatus.connected ? 'CONNECTED' : 'DISCONNECTED'}
-                                        </span>
-                                    )}
-                                </div>
-                                
-                                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                                    Connect your Upstox account to enable live market data and real-time trading.
-                                </div>
+                            {!brokerStatus.connected && (
+                                <div className="card" style={{ alignSelf: 'start' }}>
+                                    <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>Broker Connection</span>
+                                        {loadingBroker ? null : (
+                                            <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
+                                                DISCONNECTED
+                                            </span>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                                        Connect your Upstox account to enable live market data and real-time trading.
+                                    </div>
 
-                                {!brokerStatus.connected && (
                                     <button 
                                         type="button" 
                                         className="btn btn-primary btn-full"
@@ -317,14 +330,8 @@ export default function DashboardPage() {
                                     >
                                         Connect Upstox Broker
                                     </button>
-                                )}
-                                
-                                {brokerStatus.connected && (
-                                    <div style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--green)', textAlign: 'center' }}>
-                                        ✓ Trading is active via Upstox API
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             <div className="card" style={{ alignSelf: 'start' }}>
                                 <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
