@@ -102,6 +102,7 @@ public class MarketService {
 
             headers.set("Authorization", "Bearer " + activeToken);
             headers.set("Accept", "application/json");
+            headers.set("Api-Version", "2.0");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -164,6 +165,7 @@ public class MarketService {
 
             headers.set("Authorization", "Bearer " + activeToken);
             headers.set("Accept", "application/json");
+            headers.set("Api-Version", "2.0");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
