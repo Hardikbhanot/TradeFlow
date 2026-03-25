@@ -109,10 +109,10 @@ export default function Layout({ children, title }) {
                     </div>
                     
                     <div className="topbar-right">
-                        <div className="topbar-item">
+                        <div className="topbar-item hide-mobile">
                             <MarketStatus />
                         </div>
-                        <div className="topbar-item" style={{ borderLeft: '1px solid var(--border)', paddingLeft: '1rem' }}>
+                        <div className="topbar-item hide-mobile" style={{ borderLeft: '1px solid var(--border)', paddingLeft: '1rem' }}>
                             <Clock />
                         </div>
                         <button

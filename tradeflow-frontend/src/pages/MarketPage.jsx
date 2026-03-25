@@ -113,17 +113,17 @@ export default function MarketPage() {
 
     return (
         <Layout title="Market">
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="page-header">
                 <div>
                     <h1>Market Intelligence</h1>
                     <p>Track your favorite assets with KINETIC real-time feeds.</p>
                 </div>
-                <div style={{ width: '300px' }}>
+                <div className="header-search-container">
                     <SymbolSearch onSelect={handleSearchSelect} />
                 </div>
             </div>
 
-            <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 320px' }}>
+            <div className="dashboard-grid">
                 {/* Main Chart Card */}
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>

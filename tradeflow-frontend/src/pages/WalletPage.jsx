@@ -69,7 +69,7 @@ export default function WalletPage() {
                 <p>Manage your funds and transaction history in KINETIC style.</p>
             </div>
 
-            <div className="dashboard-grid" style={{ gridTemplateColumns: 'minmax(300px, 1fr) 2fr', alignItems: 'start' }}>
+            <div className="dashboard-grid">
                 {/* Left: Balance & Quick Action */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div className="wallet-balance-card" style={{ padding: '2.5rem' }}>

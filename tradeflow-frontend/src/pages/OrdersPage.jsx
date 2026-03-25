@@ -82,7 +82,7 @@ export default function OrdersPage() {
                 <p>Deploy capital with high-precision KINETIC execution controls.</p>
             </div>
 
-            <div style={{ maxWidth: 640, margin: '0 auto' }}>
+            <div className="terminal-container">
                 {result && (
                     <div style={{
                         background: result.ok ? 'rgba(0,255,150,0.1)' : 'rgba(255,0,80,0.1)',
@@ -199,7 +199,7 @@ export default function OrdersPage() {
             {/* KINETIC Confirmation Modal */}
             {showConfirm && (
                 <div className="modal-overlay">
-                    <div className="card" style={{ width: 420, padding: '2rem', background: 'rgba(10,14,18,0.95)', border: '1px solid var(--primary)' }}>
+                    <div className="card execution-modal">
                         <div style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--primary)', textAlign: 'center' }}>
                             CONFIRM {form.side} EXECUTION
                         </div>

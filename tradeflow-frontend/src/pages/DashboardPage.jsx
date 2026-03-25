@@ -157,14 +157,13 @@ export default function DashboardPage() {
         <Layout title="Dashboard">
             <Toast toasts={toasts} />
 
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="page-header">
                 <div>
                     <h1>Good evening, {user?.username ?? 'Trader'} 👋</h1>
                     <p>Here's your portfolio summary for today.</p>
                 </div>
                 <button 
                     className={`btn ${showTradeDesk ? 'btn-red' : 'btn-primary'}`} 
-                    style={{ padding: '10px 24px', fontWeight: 800, letterSpacing: '0.05em' }}
                     onClick={() => setShowTradeDesk(!showTradeDesk)}
                 >
                     {showTradeDesk ? 'EXIT TRADE DESK' : 'LAUNCH TRADE DESK'}
@@ -220,7 +219,7 @@ export default function DashboardPage() {
                                 <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                         <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Activity Ledger</span>
-                                        <div style={{ background: 'var(--surface)', padding: '4px', borderRadius: '6px', display: 'flex', gap: '4px' }}>
+                                        <div className="tab-row">
                                             <button 
                                                 className="btn" 
                                                 style={{ fontSize: '0.65rem', padding: '4px 12px', background: ledgerTab === 'REAL-TIME' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REAL-TIME' ? 'var(--primary)' : 'var(--text-muted)' }}
