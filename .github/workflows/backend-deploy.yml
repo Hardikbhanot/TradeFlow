@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'tradeflow-backend/**'
+      - '.github/workflows/backend-deploy.yml'
 
 env:
   REGISTRY: ghcr.io
@@ -59,6 +60,19 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose, env and other files to Droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 139.59.25.118
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "tradeflow-backend/docker-compose.deploy.yml"
+          target: "/home/tradeflow"
+          strip_components: 1
+
       - name: Deploy to Droplet via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

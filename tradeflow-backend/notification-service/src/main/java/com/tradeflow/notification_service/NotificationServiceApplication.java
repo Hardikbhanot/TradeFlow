@@ -9,7 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableDiscoveryClient
 @EnableFeignClients
 public class NotificationServiceApplication {
-
+    // Trigger CI deployment fix
     public static void main(String[] args) {
         SpringApplication.run(NotificationServiceApplication.class, args);
     }

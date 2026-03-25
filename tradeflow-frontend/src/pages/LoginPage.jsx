@@ -44,7 +44,9 @@ export default function LoginPage() {
 
             setError('Unexpected login response from server.');
         } catch (err) {
-            setError(err.response?.data || 'Login failed. Check your credentials.');
+            const data = err.response?.data;
+            const message = typeof data === 'string' ? data : (data?.message || data?.error || 'Login failed. Check your credentials.');
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -71,7 +73,9 @@ export default function LoginPage() {
             login(token);
             navigate('/dashboard');
         } catch (err) {
-            setError(err.response?.data || 'OTP verification failed.');
+            const data = err.response?.data;
+            const message = typeof data === 'string' ? data : (data?.message || data?.error || 'OTP verification failed.');
+            setError(message);
         } finally {
             setLoading(false);
         }

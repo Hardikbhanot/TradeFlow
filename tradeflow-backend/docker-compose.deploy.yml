@@ -2,186 +2,97 @@ services:
   discovery-server:
     image: ghcr.io/hardikbhanot/tradeflow/discovery-server:latest
     ports: ["8761:8761"]
+    env_file: .env
     environment:
-<<<<<<< Updated upstream
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
-=======
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx256m
->>>>>>> Stashed changes
     restart: always
 
   api-gateway:
     image: ghcr.io/hardikbhanot/tradeflow/api-gateway:latest
     ports: ["8080:8080"]
     depends_on: [discovery-server]
+    env_file: .env
     environment:
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx256m -Xms200m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-<<<<<<< Updated upstream
-      - AUTH_SERVICE_URI=http://auth-service:9000
-=======
       - SPRING_PROFILES_ACTIVE=prod
-      - JWT_SECRET=${JWT_SECRET}
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx400m
->>>>>>> Stashed changes
     restart: always
 
   auth-service:
     image: ghcr.io/hardikbhanot/tradeflow/auth-service:latest
     depends_on: [discovery-server, redis]
+    env_file: .env
     environment:
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx256m -Xms200m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
-<<<<<<< Updated upstream
-      - AUTH_DB_URL=${AUTH_DB_URL}
-      - AUTH_DB_USERNAME=${AUTH_DB_USERNAME}
-      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_DATA_REDIS_HOST=redis
-      - UPSTOX_API_KEY=${UPSTOX_API_KEY}
-      - UPSTOX_API_SECRET=${UPSTOX_API_SECRET}
-      - UPSTOX_REDIRECT_URI=${UPSTOX_REDIRECT_URI}
     restart: always
 
   user-service:
     image: ghcr.io/hardikbhanot/tradeflow/user_service:latest
     depends_on: [discovery-server]
+    env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - USER_DB_URL=${USER_DB_URL}
-      - USER_DB_USERNAME=${USER_DB_USERNAME}
-      - USER_DB_PASSWORD=${USER_DB_PASSWORD}
     restart: always
 
   wallet-service:
     image: ghcr.io/hardikbhanot/tradeflow/wallet_service:latest
     depends_on: [discovery-server]
+    env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - WALLET_DB_URL=${WALLET_DB_URL}
-      - WALLET_DB_USERNAME=${WALLET_DB_USERNAME}
-      - WALLET_DB_PASSWORD=${WALLET_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     restart: always
 
-=======
-      - SPRING_DATASOURCE_URL=${AUTH_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - JWT_SECRET=${JWT_SECRET}
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx400m
-    restart: always
-
-  # CHANGED: Use hyphens to match Gateway/Eureka expectations
->>>>>>> Stashed changes
   market-service:
     image: ghcr.io/hardikbhanot/tradeflow/market_service:latest
     depends_on: [discovery-server, kafka, redis]
+    env_file: .env
     environment:
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx256m -Xms200m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_DATA_REDIS_HOST=redis
-<<<<<<< Updated upstream
-      - UPSTOX_API_KEY=${UPSTOX_API_KEY}
-      - UPSTOX_API_SECRET=${UPSTOX_API_SECRET}
-      - UPSTOX_ACCESS_TOKEN=${UPSTOX_ACCESS_TOKEN}
-      - UPSTOX_REDIRECT_URI=${UPSTOX_REDIRECT_URI}
-=======
-      - UPSTOX_ACCESS_TOKEN=${UPSTOX_ACCESS_TOKEN}
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx400m
->>>>>>> Stashed changes
     restart: always
 
   portfolio-service:
     image: ghcr.io/hardikbhanot/tradeflow/portfolio_service:latest
     depends_on: [discovery-server, kafka, redis]
+    env_file: .env
     environment:
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
+      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx200m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=${PORTFOLIO_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - SPRING_DATA_REDIS_HOST=redis
-<<<<<<< Updated upstream
-      - PORTFOLIO_DB_URL=${PORTFOLIO_DB_URL}
-      - PORTFOLIO_DB_USERNAME=${PORTFOLIO_DB_USERNAME}
-      - PORTFOLIO_DB_PASSWORD=${PORTFOLIO_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-=======
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx400m
->>>>>>> Stashed changes
+      - SPRING_DATA_REDIS_HOST=redis
     restart: always
 
   order-service:
     image: ghcr.io/hardikbhanot/tradeflow/order_service:latest
     depends_on: [discovery-server, kafka]
+    env_file: .env
     environment:
-<<<<<<< Updated upstream
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - ORDER_DB_URL=${ORDER_DB_URL}
-      - ORDER_DB_USERNAME=${ORDER_DB_USERNAME}
-      - ORDER_DB_PASSWORD=${ORDER_DB_PASSWORD}
-=======
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_DATASOURCE_URL=${ORDER_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx400m
-    restart: always
-
-  # ADDED: Missing Wallet Service
-  wallet-service:
-    image: ghcr.io/hardikbhanot/tradeflow/wallet-service:latest
-    depends_on: [discovery-server, kafka]
-    environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_DATASOURCE_URL=${WALLET_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx300m
-    restart: always
-
-  # ADDED: Missing User Service
-  user-service:
-    image: ghcr.io/hardikbhanot/tradeflow/user-service:latest
-    depends_on: [discovery-server]
-    environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=${USER_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx300m
->>>>>>> Stashed changes
     restart: always
 
   notification-service:
     image: ghcr.io/hardikbhanot/tradeflow/notification-service:latest
     depends_on: [discovery-server, kafka]
+    env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-<<<<<<< Updated upstream
-      - NOTIFICATION_DB_URL=${AUTH_DB_URL}
-      - NOTIFICATION_DB_USERNAME=${AUTH_DB_USERNAME}
-      - NOTIFICATION_DB_PASSWORD=${AUTH_DB_PASSWORD}
-=======
-      - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx300m
->>>>>>> Stashed changes
     restart: always
 
   kafka:

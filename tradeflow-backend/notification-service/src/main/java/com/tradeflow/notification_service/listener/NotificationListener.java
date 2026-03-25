@@ -22,10 +22,14 @@ public class NotificationListener {
         log.info("📧 Processing trade notification for User: {}", event.getUserId());
 
         try {
-            emailService.sendTradeConfirmationEmail(event);
-            log.info("✅ Trade email sent to User {}", event.getUserId());
+            boolean success = emailService.sendTradeConfirmationEmail(event);
+            if (success) {
+                log.info("✅ Trade email sent to User {}", event.getUserId());
+            } else {
+                log.error("❌ Trade email failed to dispatch via SendGrid");
+            }
         } catch (Exception e) {
-            log.error("❌ Trade email failed: {}", e.getMessage());
+            log.error("❌ Trade email system error: {}", e.getMessage());
         }
     }
 
@@ -34,10 +38,14 @@ public class NotificationListener {
         log.info("💰 Processing wallet notification for User: {} | Type: {}", event.getUserId(), event.getType());
 
         try {
-            emailService.sendWalletNotificationEmail(event);
-            log.info("✅ Wallet email sent to User {}", event.getUserId());
+            boolean success = emailService.sendWalletNotificationEmail(event);
+            if (success) {
+                log.info("✅ Wallet email sent to User {}", event.getUserId());
+            } else {
+                log.error("❌ Wallet email failed to dispatch via SendGrid");
+            }
         } catch (Exception e) {
-            log.error("❌ Wallet email failed: {}", e.getMessage());
+            log.error("❌ Wallet email system error: {}", e.getMessage());
         }
     }
 
@@ -46,10 +54,15 @@ public class NotificationListener {
         log.info("🔐 Processing OTP request for User: {}", event.getUsername());
 
         try {
-            emailService.sendOtpEmail(event);
-            log.info("✅ OTP email sent to {}", event.getEmail());
+            boolean success = emailService.sendOtpEmail(event);
+            if (success) {
+                log.info("✅ OTP email sent to {}", event.getEmail());
+            } else {
+                log.error("❌ OTP email failed to dispatch via SendGrid");
+            }
         } catch (Exception e) {
-            log.error("❌ OTP email failed: {}", e.getMessage());
+            log.error("❌ OTP email system error: {}", e.getMessage());
         }
     }
+
 }
