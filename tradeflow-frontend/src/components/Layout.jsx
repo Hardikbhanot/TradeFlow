@@ -65,12 +65,15 @@ export default function Layout({ children, title }) {
         <div className="app-layout">
             {/* Sidebar */}
             <aside className="sidebar">
-                <div className="sidebar-logo">
-                    <span style={{ color: 'var(--green)' }}>▲</span>
-                    TradeFlow
+                <div className="sidebar-brand">
+                    <div className="sidebar-title">
+                        <img src="/logo.png" alt="TradeFlow Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
+                        TRADEFLOW
+                    </div>
+                    <div className="sidebar-subtitle">Observatory V2.0</div>
                 </div>
 
-                <div className="nav-section-label">Navigation</div>
+                <div className="nav-section-label">Main Console</div>
                 {NAV.map((n) => (
                     <NavLink
                         key={n.to}
@@ -87,33 +90,52 @@ export default function Layout({ children, title }) {
                         <div className="sidebar-avatar">{initials}</div>
                         <div className="sidebar-user-info">
                             <div className="name">{user?.username ?? 'Trader'}</div>
-                            <div className="role">Investor</div>
+                            <div className="role">Verified Investor</div>
                         </div>
                     </div>
                     <button className="sidebar-logout" onClick={handleLogout}>
-                        ↩ Logout
+                        <span>↩</span> Logout
                     </button>
                 </div>
             </aside>
 
-            {/* Main */}
+            {/* Main Content Area */}
             <div className="main-area">
+                <TickerBar />
+                
                 <header className="topbar">
-                    <span className="topbar-title">{title}</span>
+                    <div className="topbar-left">
+                        <span className="topbar-title">{title}</span>
+                    </div>
+                    
                     <div className="topbar-right">
-                        <span>🕐 <Clock /></span>
-                        <MarketStatus />
+                        <div className="topbar-item">
+                            <MarketStatus />
+                        </div>
+                        <div className="topbar-item" style={{ borderLeft: '1px solid var(--border)', paddingLeft: '1rem' }}>
+                            <Clock />
+                        </div>
                         <button
+                            className="theme-toggle"
                             onClick={() => setIsLight(!isLight)}
-                            style={{ background: 'transparent', padding: '4px', fontSize: '1.2rem', marginLeft: '10px' }}
+                            style={{ 
+                                background: 'var(--surface-opaque)', 
+                                border: '1px solid var(--border)',
+                                borderRadius: '6px',
+                                width: '32px',
+                                height: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-2)'
+                             }}
                             title="Toggle Theme"
                         >
                             {isLight ? '🌙' : '☀️'}
                         </button>
                     </div>
                 </header>
-
-                <TickerBar />
 
                 <main className="page-content">
                     {children}

@@ -1,30 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-/* ── Design Tokens ── */
+/* ── KINETIC Design System ── */
 :root {
-  --bg: #0a0e1a;
-  --surface: #111827;
-  --surface2: #1a2234;
-  --border: #1f2937;
-  --border2: #374151;
+  --primary: #00FFD1;
+  --primary-dim: rgba(0, 255, 209, 0.1);
+  --primary-hover: #00e6bc;
+  
+  --bg: #06080c;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-opaque: #0D1219;
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  
+  --border: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(0, 255, 209, 0.4);
 
-  --green: #10b981;
-  --green-dim: #064e3b;
-  --red: #ef4444;
-  --red-dim: #7f1d1d;
+  --green: #00FFD1; /* Unified with Primary for KINETIC theme */
+  --green-dim: rgba(0, 255, 209, 0.1);
+  --red: #FF4D4D;
+  --red-dim: rgba(255, 77, 77, 0.1);
   --blue: #3b82f6;
-  --blue-dim: #1e3a5f;
-  --gold: #f59e0b;
-  --gold-dim: #78350f;
-  --purple: #8b5cf6;
+  --blue-dim: rgba(59, 130, 246, 0.1);
+  --gold: #FFB31A;
+  --gold-dim: rgba(255, 179, 26, 0.1);
 
-  --text: #f9fafb;
-  --text-2: #d1d5db;
-  --text-muted: #6b7280;
+  --text: #FFFFFF;
+  --text-2: #A3ABB2;
+  --text-muted: #626D7A;
 
-  --radius: 10px;
-  --radius-lg: 16px;
-  --transition: 0.18s ease;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --glass: blur(12px);
 }
 
 /* ── Light Mode Tokens ── */
@@ -262,33 +269,56 @@ select {
   gap: 1rem;
 }
 
-/* ── Table ── */
+/* ── KINETIC Table (Activity Ledger) ── */
 .tf-table {
   width: 100%;
   border-collapse: collapse;
 }
 
 .tf-table th {
-  padding: 0.6rem 1rem;
-  font-size: 0.72rem;
-  font-weight: 600;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-align: left;
+  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
 
 .tf-table td {
-  padding: 0.85rem 1rem;
-  font-size: 0.88rem;
+  padding: 1.5rem;
+  font-size: 0.9rem;
   border-bottom: 1px solid var(--border);
   color: var(--text-2);
+  vertical-align: middle;
 }
 
 .tf-table tr:last-child td {
   border-bottom: none;
 }
+
+.tf-table tbody tr {
+    transition: var(--transition);
+}
+
+.tf-table tbody tr:hover {
+  background: var(--surface);
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-successful { color: var(--primary); background: var(--primary-dim); }
+.status-pending { color: var(--gold); background: var(--gold-dim); }
+.status-failed { color: var(--red); background: var(--red-dim); }
 
 .tf-table tbody tr:hover {
   background: var(--surface2);
@@ -366,95 +396,124 @@ select {
 
 /* Sidebar */
 .sidebar {
-  width: 220px;
+  width: 250px;
   flex-shrink: 0;
-  background: var(--surface);
+  background: var(--bg);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 0;
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
+  z-index: 100;
 }
 
-.sidebar-logo {
-  padding: 0 1.25rem 1.5rem;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--green);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.sidebar-brand {
+    padding: 2rem 1.5rem 2.5rem;
 }
 
-.sidebar-logo span {
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  font-weight: 400;
+.sidebar-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-subtitle {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--primary);
+    margin-top: 4px;
+    opacity: 0.8;
 }
 
 .nav-section-label {
-  padding: 0.25rem 1.25rem;
-  font-size: 0.65rem;
-  font-weight: 600;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin-bottom: 4px;
-  margin-top: 0.75rem;
+  margin-bottom: 8px;
+  margin-top: 1.5rem;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.88rem;
+  gap: 12px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  color: var(--text-muted);
-  border-left: 3px solid transparent;
+  color: var(--text-2);
   transition: var(--transition);
+  position: relative;
 }
 
 .nav-link:hover {
   color: var(--text);
-  background: var(--surface2);
+  background: var(--surface);
 }
 
 .nav-link.active {
-  color: var(--text);
-  background: var(--surface2);
-  border-left-color: var(--green);
+  color: var(--primary);
+  background: var(--primary-dim);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 3px;
+    background: var(--primary);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px var(--primary);
 }
 
 .nav-icon {
-  font-size: 1rem;
-  width: 18px;
-  text-align: center;
+  font-size: 1.1rem;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
+
+.nav-link.active .nav-icon {
+    opacity: 1;
 }
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 1rem 1.25rem 0;
+  padding: 1.5rem;
   border-top: 1px solid var(--border);
 }
 
 .sidebar-user {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0.75rem 0;
+  gap: 12px;
+  margin-bottom: 1.5rem;
 }
 
 .sidebar-avatar {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--blue), var(--purple));
+  background: var(--surface);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--primary);
   flex-shrink: 0;
 }
 
@@ -464,7 +523,7 @@ select {
 }
 
 .sidebar-user-info .name {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
@@ -473,19 +532,21 @@ select {
 }
 
 .sidebar-user-info .role {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .sidebar-logout {
   background: none;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0.4rem 0;
+  gap: 8px;
+  padding: 0.5rem 0;
   transition: var(--transition);
+  width: 100%;
 }
 
 .sidebar-logout:hover {
@@ -600,28 +661,143 @@ select {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1.2rem 1.4rem;
+  padding: 1.5rem;
+  backdrop-filter: var(--glass);
+  -webkit-backdrop-filter: var(--glass);
 }
 
-.stat-card .label {
-  font-size: 0.73rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+/* ── KINETIC Hero Card ── */
+.hero-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
 }
 
-.stat-card .value {
-  font-size: 1.5rem;
-  font-weight: 700;
+.hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+    box-shadow: 0 0 15px var(--primary);
 }
 
-.stat-card .sub {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin-top: 4px;
+.hero-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-2);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
+
+.hero-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.hero-value {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    font-family: 'Outfit', sans-serif;
+}
+
+.hero-delta {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.hero-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.hero-stat-item .label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+}
+
+.hero-stat-item .value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* ── KINETIC News Feed ── */
+.news-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.news-item {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.news-item:last-child {
+    border-bottom: none;
+}
+
+.news-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.news-source {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--primary);
+    letter-spacing: 0.05em;
+}
+
+.news-time {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.news-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+}
+
+.news-sentiment {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.news-sentiment.positive { color: var(--primary); background: var(--primary-dim); }
+.news-sentiment.negative { color: var(--red); background: var(--red-dim); }
+.news-sentiment.neutral { color: var(--text-muted); background: var(--surface); }
 
 /* ── Quick Order ── */
 .order-panel {
@@ -804,4 +980,178 @@ select {
   font-size: 2.4rem;
   font-weight: 800;
   color: #ffffff;
+}
+/* ── KINETIC Asset Cards Grid ── */
+.holdings-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.asset-card {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.asset-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 255, 209, 0.08);
+}
+
+.asset-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.asset-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.asset-card-info .symbol {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.asset-card-info .exchange {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.asset-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.asset-badge.up { color: var(--primary); background: var(--primary-dim); }
+.asset-badge.down { color: var(--red); background: var(--red-dim); }
+
+.asset-card-price {
+    margin-bottom: 2rem;
+}
+
+.asset-card-price .ltp {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+}
+
+.asset-card-price .qty {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.asset-card-footer .weight-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.weight-bar-bg {
+    width: 100%;
+    height: 4px;
+    background: var(--surface);
+    border-radius: 2px;
+}
+
+.weight-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--primary);
+}
+
+/* ── KINETIC Trade Desk & Professional Order Panel ── */
+.trade-desk-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(20px);
+}
+
+.order-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.order-tab.buy.active {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 15px var(--primary);
+}
+
+.order-tab.sell.active {
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 0 15px var(--red);
+}
+
+.btn-red {
+    background: var(--red);
+    color: #fff;
+}
+
+.btn-red:hover {
+    background: #ff5d70;
+    box-shadow: 0 0 20px rgba(255, 65, 89, 0.4);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── KINETIC Market Watch Alerts ── */
+.market-watch {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.alert-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+}
+
+.alert-warning {
+    background: rgba(255, 152, 0, 0.1);
+    border-left-color: #FF9800;
+    color: #FFB74D;
+}
+
+.alert-info {
+    background: rgba(0, 188, 212, 0.1);
+    border-left-color: #00BCD4;
+    color: #4DD0E1;
+}
+
+.alert-time {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    opacity: 0.6;
+    text-transform: uppercase;
 }

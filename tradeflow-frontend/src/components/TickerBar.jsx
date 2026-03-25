@@ -39,9 +39,14 @@ export default function TickerBar() {
                 {doubled.map((item, i) => (
                     <span className="ticker-item" key={i}>
                         <span className="ticker-symbol">{item.sym}</span>
-                        <span className="ticker-price" style={{ color: 'var(--green)' }}>
+                        <span className="ticker-price" style={{ color: 'var(--primary)', fontWeight: 700 }}>
                             {item.price !== '---' ? `₹${Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '---'}
                         </span>
+                        {item.price !== '---' && (
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '-4px' }}>
+                                +0.45%
+                            </span>
+                        )}
                     </span>
                 ))}
             </div>
