@@ -23,6 +23,8 @@ export default function DashboardPage() {
     const [wallet, setWallet] = useState(null);
     const [prices, setPrices] = useState({});
     const [loadingHoldings, setLoadingHoldings] = useState(true);
+    const [brokerStatus, setBrokerStatus] = useState({ connected: false, broker: 'None' });
+    const [loadingBroker, setLoadingBroker] = useState(true);
     const [toasts, setToasts] = useState([]);
 
 
@@ -63,10 +65,22 @@ export default function DashboardPage() {
         } catch {}
     }, []);
 
+    const fetchBrokerStatus = useCallback(async () => {
+        try {
+            const res = await api.get('/auth/upstox/status');
+            setBrokerStatus(res.data);
+        } catch {
+            // ignore
+        } finally {
+            setLoadingBroker(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchHoldings();
         fetchWallet();
-    }, [fetchHoldings, fetchWallet]);
+        fetchBrokerStatus();
+    }, [fetchHoldings, fetchWallet, fetchBrokerStatus]);
 
     useEffect(() => {
         if (holdings.length) {
@@ -91,6 +105,17 @@ export default function DashboardPage() {
     const totalCurrent = holdings.reduce((s, h) => s + (((prices[h.symbol] ?? h.avgPrice ?? 0) * (h.totalQuantity ?? 0))), 0);
     const pnl = totalCurrent - totalInvested;
     const pnlPct = totalInvested ? (pnl / totalInvested) * 100 : 0;
+
+    async function connectBroker() {
+        try {
+            const res = await api.get('/auth/upstox/login-url');
+            if (res.data?.url) {
+                window.location.href = res.data.url;
+            }
+        } catch (err) {
+            addToast('Failed to get connection URL', 'error');
+        }
+    }
 
     async function placeQuickOrder(e) {
         e.preventDefault();
@@ -211,6 +236,35 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
+
+                <div className="card" style={{ alignSelf: 'start' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Broker Connection</span>
+                        {loadingBroker ? null : (
+                            <span className={`badge ${brokerStatus.connected ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.65rem' }}>
+                                {brokerStatus.connected ? 'CONNECTED' : 'DISCONNECTED'}
+                            </span>
+                        )}
+                    </div>
+                    
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                        Connect your Upstox account to enable live market data and real-time trading.
+                    </div>
+
+                    <button 
+                        type="button" 
+                        className={`btn btn-full ${brokerStatus.connected ? 'btn-outline' : 'btn-primary'}`}
+                        onClick={connectBroker}
+                    >
+                        {brokerStatus.connected ? 'Reconnect Upstox' : 'Connect Upstox Broker'}
+                    </button>
+                    
+                    {brokerStatus.connected && (
+                        <div style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--green)', textAlign: 'center' }}>
+                             ✓ Trading is active via Upstox API
+                        </div>
+                    )}
+                </div>
 
                 <div className="card" style={{ alignSelf: 'start' }}>
                     <div style={{ fontWeight: 600, marginBottom: '1rem' }}>Quick Order</div>
