@@ -23,6 +23,7 @@ export default function OrdersPage() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [result, setResult] = useState(null);
+    const [history, setHistory] = useState([]);
 
     async function fetchPriceForSym(symbol) {
         if (!symbol.trim()) return;
@@ -37,8 +38,16 @@ export default function OrdersPage() {
         finally { setFetchingPrice(false); }
     }
 
+    async function fetchHistory() {
+        try {
+            const r = await api.get('/api/v1/orders');
+            setHistory(r.data);
+        } catch {}
+    }
+
     useEffect(() => {
         if (initialSymbol) fetchPriceForSym(initialSymbol);
+        fetchHistory();
     }, [initialSymbol]);
 
     async function confirmOrder() {
@@ -61,6 +70,7 @@ export default function OrdersPage() {
             setResult({ ok: true, msg: `✅ Order placed! ID: ${res.data.id} | Status: ${res.data.status}` });
             setForm({ symbol: '', quantity: '', exchange: 'NSE', side: 'BUY', orderType: 'MARKET', pricePerUnit: '', triggerPrice: '' });
             setLivePrice(null);
+            fetchHistory();
         } catch (err) {
             setResult({ ok: false, msg: `❌ ${err.response?.data?.message ?? 'Failed to place order'}` });
         } finally {
@@ -82,116 +92,178 @@ export default function OrdersPage() {
                 <p>Deploy capital with high-precision KINETIC execution controls.</p>
             </div>
 
-            <div className="terminal-container">
-                {result && (
-                    <div style={{
-                        background: result.ok ? 'rgba(0,255,150,0.1)' : 'rgba(255,0,80,0.1)',
-                        color: result.ok ? 'var(--green)' : 'var(--red)',
-                        padding: '1rem', borderRadius: '12px', border: `1px solid ${result.ok ? 'var(--green)' : 'var(--red)'}`,
-                        marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center'
-                    }}>
-                        {result.msg}
-                    </div>
-                )}
+            <div className="orders-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) 2fr', gap: '2rem', alignItems: 'start' }}>
+                <div className="execution-side">
+                    {result && (
+                        <div style={{
+                            background: result.ok ? 'rgba(0,255,150,0.1)' : 'rgba(255,0,80,0.1)',
+                            color: result.ok ? 'var(--green)' : 'var(--red)',
+                            padding: '1rem', borderRadius: '12px', border: `1px solid ${result.ok ? 'var(--green)' : 'var(--red)'}`,
+                            marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center'
+                        }}>
+                            {result.msg}
+                        </div>
+                    )}
 
-                <div className="card" style={{ padding: '2rem' }}>
-                    <div className="tab-row" style={{ marginBottom: '2rem' }}>
-                        {SIDES.map(s => (
-                            <button key={s} type="button"
-                                className={`order-tab ${s.toLowerCase()} ${form.side === s ? 'active' : ''}`}
-                                style={{ flex: 1, padding: '12px' }}
-                                onClick={() => setForm(f => ({ ...f, side: s }))}>
-                                {s}
-                            </button>
-                        ))}
-                    </div>
+                    <div className="card" style={{ padding: '2rem' }}>
+                        <div className="tab-row" style={{ marginBottom: '2rem' }}>
+                            {SIDES.map(s => (
+                                <button key={s} type="button"
+                                    className={`order-tab ${s.toLowerCase()} ${form.side === s ? 'active' : ''}`}
+                                    style={{ flex: 1, padding: '12px' }}
+                                    onClick={() => setForm(f => ({ ...f, side: s }))}>
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div className="form-group">
-                            <label className="auth-label">Asset Search</label>
-                            <SymbolSearch onSelect={(sym) => {
-                                setForm(f => ({ ...f, symbol: sym }));
-                                setLivePrice(null);
-                                fetchPriceForSym(sym);
-                            }} />
-                            {form.symbol && (
-                                <div style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>
-                                    SELECTED: {form.symbol.toUpperCase()}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div className="form-group">
+                                <label className="auth-label">Asset Search</label>
+                                <SymbolSearch onSelect={(sym) => {
+                                    setForm(f => ({ ...f, symbol: sym }));
+                                    setLivePrice(null);
+                                    fetchPriceForSym(sym);
+                                }} />
+                                {form.symbol && (
+                                    <div style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>
+                                        SELECTED: {form.symbol.toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+
+                            {livePrice && (
+                                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Real-time LTP</span>
+                                    <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--green)' }}>₹{typeof livePrice === 'number' ? fmt(livePrice) : livePrice}</span>
                                 </div>
                             )}
-                        </div>
 
-                        {livePrice && (
-                            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Real-time LTP</span>
-                                <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--green)' }}>₹{typeof livePrice === 'number' ? fmt(livePrice) : livePrice}</span>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label className="auth-label">Quantity</label>
+                                    <input className="form-input" type="number" min="1" placeholder="0" value={form.quantity}
+                                        onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="auth-label">Exchange</label>
+                                    <select className="form-input" value={form.exchange}
+                                        onChange={e => setForm(f => ({ ...f, exchange: e.target.value }))}>
+                                        {EXCHANGES.map(ex => <option key={ex}>{ex}</option>)}
+                                    </select>
+                                </div>
                             </div>
-                        )}
 
-                        <div className="form-row">
                             <div className="form-group">
-                                <label className="auth-label">Quantity</label>
-                                <input className="form-input" type="number" min="1" placeholder="0" value={form.quantity}
-                                    onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+                                <label className="auth-label">Order Type</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {ORDER_TYPES.map(t => (
+                                        <button 
+                                            key={t}
+                                            type="button"
+                                            className={`btn ${form.orderType === t ? 'btn-primary-dim' : 'btn-ghost'}`}
+                                            style={{ flex: 1, fontSize: '0.7rem' }}
+                                            onClick={() => setForm(f => ({ ...f, orderType: t }))}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label className="auth-label">Exchange</label>
-                                <select className="form-input" value={form.exchange}
-                                    onChange={e => setForm(f => ({ ...f, exchange: e.target.value }))}>
-                                    {EXCHANGES.map(ex => <option key={ex}>{ex}</option>)}
-                                </select>
+
+                            {form.orderType !== 'MARKET' && (
+                                <div className="form-group">
+                                    <label className="auth-label">Limit Price (₹)</label>
+                                    <input className="form-input" type="number" step="0.01" placeholder="0.00" value={form.pricePerUnit}
+                                        onChange={e => setForm(f => ({ ...f, pricePerUnit: e.target.value }))} />
+                                </div>
+                            )}
+
+                            {form.orderType === 'STOP_LOSS' && (
+                                <div className="form-group">
+                                    <label className="auth-label">Trigger Price (₹)</label>
+                                    <input className="form-input" type="number" step="0.01" placeholder="0.00" value={form.triggerPrice}
+                                        onChange={e => setForm(f => ({ ...f, triggerPrice: e.target.value }))} />
+                                </div>
+                            )}
+
+                            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', marginTop: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Estimated Capital Required</span>
+                                    <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>₹{totalEstimate}</span>
+                                </div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>*Excluding brokerage and SEBI charges.</div>
                             </div>
+
+                            <button
+                                className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
+                                style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
+                                onClick={() => setShowConfirm(true)}
+                                disabled={!form.symbol || !form.quantity}
+                            >
+                                REVIEW {form.side} ORDER →
+                            </button>
                         </div>
+                    </div>
+                </div>
 
-                        <div className="form-group">
-                            <label className="auth-label">Order Type</label>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                {ORDER_TYPES.map(t => (
-                                    <button 
-                                        key={t}
-                                        type="button"
-                                        className={`btn ${form.orderType === t ? 'btn-primary-dim' : 'btn-ghost'}`}
-                                        style={{ flex: 1, fontSize: '0.7rem' }}
-                                        onClick={() => setForm(f => ({ ...f, orderType: t }))}
-                                    >
-                                        {t}
-                                    </button>
-                                ))}
-                            </div>
+                <div className="history-side">
+                    <div className="card" style={{ padding: 0 }}>
+                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Past Orders</h2>
+                            <button className="btn btn-ghost" style={{ fontSize: '0.7rem' }} onClick={fetchHistory}>REFRESH</button>
                         </div>
-
-                        {form.orderType !== 'MARKET' && (
-                            <div className="form-group">
-                                <label className="auth-label">Limit Price (₹)</label>
-                                <input className="form-input" type="number" step="0.01" placeholder="0.00" value={form.pricePerUnit}
-                                    onChange={e => setForm(f => ({ ...f, pricePerUnit: e.target.value }))} />
-                            </div>
-                        )}
-
-                        {form.orderType === 'STOP_LOSS' && (
-                            <div className="form-group">
-                                <label className="auth-label">Trigger Price (₹)</label>
-                                <input className="form-input" type="number" step="0.01" placeholder="0.00" value={form.triggerPrice}
-                                    onChange={e => setForm(f => ({ ...f, triggerPrice: e.target.value }))} />
-                            </div>
-                        )}
-
-                        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', marginTop: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Estimated Capital Required</span>
-                                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>₹{totalEstimate}</span>
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>*Excluding brokerage and SEBI charges.</div>
+                        <div className="table-container" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                            <table className="ledger-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Qty</th>
+                                        <th>Type</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                                No recent orders found.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        history.map(order => (
+                                            <tr key={order.id}>
+                                                <td style={{ fontWeight: 700 }}>{order.symbol}</td>
+                                                <td>
+                                                    <span style={{ color: order.side === 'BUY' ? 'var(--primary)' : 'var(--red)', fontWeight: 800 }}>
+                                                        {order.side}
+                                                    </span>
+                                                </td>
+                                                <td>{order.quantity}</td>
+                                                <td style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{order.type}</td>
+                                                <td>₹{fmt(order.executedPrice || order.triggerPrice || 0)}</td>
+                                                <td>
+                                                    <span style={{ 
+                                                        fontSize: '0.65rem', 
+                                                        fontWeight: 800, 
+                                                        padding: '4px 8px', 
+                                                        borderRadius: '4px',
+                                                        background: order.status === 'COMPLETED' ? 'rgba(0,255,150,0.1)' : 
+                                                                    order.status === 'REJECTED' ? 'rgba(255,0,80,0.1)' : 'rgba(255,180,0,0.1)',
+                                                        color: order.status === 'COMPLETED' ? 'var(--green)' : 
+                                                               order.status === 'REJECTED' ? 'var(--red)' : 'var(--yellow)'
+                                                    }}>
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-
-                        <button
-                            className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
-                            style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
-                            onClick={() => setShowConfirm(true)}
-                            disabled={!form.symbol || !form.quantity}
-                        >
-                            REVIEW {form.side} ORDER →
-                        </button>
                     </div>
                 </div>
             </div>

@@ -17,6 +17,7 @@ import com.tradeflow.order_service.dto.OrderRequest;
 import com.tradeflow.order_service.dto.OrderCompletedEvent;
 import com.tradeflow.order_service.dto.WalletUpdateEvent;
 import com.tradeflow.order_service.dto.NotificationEvent;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -69,16 +70,12 @@ public class OrderService {
             // Fetch live price from market-service
             BigDecimal currentPrice = marketClient.getLivePrice(request.getSymbol());
             
-            // FIXED: Safety check for null/zero price to prevent DB constraint crash
             if (currentPrice == null || currentPrice.compareTo(BigDecimal.ZERO) <= 0) {
                 log.error("❌ Market Data Failure: Received null or zero price for {}", request.getSymbol());
                 throw new RuntimeException("Market data service unavailable. Please try again.");
             }
 
             order.setExecutedPrice(currentPrice);
-            
-            // FIXED: Set to PENDING first. The OrderEventListener will set it to COMPLETED
-            // once the Wallet Service confirms funds on the 'funds-reserved-topic'.
             order.setStatus(OrderStatus.PENDING); 
             priceForReservation = currentPrice;
             log.info("🛒 Market order prepared at ₹{}. Waiting for wallet verification...", currentPrice);
@@ -90,7 +87,7 @@ public class OrderService {
             log.info("⏳ Limit order placed. Target price: ₹{}", request.getTriggerPrice());
         }
 
-        // 4. Save to Database (Line 83)
+        // 4. Save to Database
         Order savedOrder = orderRepository.save(order);
         log.info("💾 Order persisted in DB with ID: {}", savedOrder.getId());
 
@@ -131,7 +128,6 @@ public class OrderService {
             return;
         }
 
-        // Allow completion if it was PENDING (Limit order) or PROCESSING (Market order)
         if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.PROCESSING) {
             log.warn("Order {} is in state {} which cannot be completed. Skipping.", orderId, order.getStatus());
             return;
@@ -144,7 +140,7 @@ public class OrderService {
         order.setExecutedPrice(executedPrice);
         orderRepository.save(order);
 
-        // 2. Wallet Credit for Sells (Money goes into the user's wallet)
+        // 2. Wallet Credit for Sells
         if (order.getSide() == OrderSide.SELL) {
             BigDecimal totalCredit = BigDecimal.valueOf(order.getQuantity()).multiply(executedPrice);
 
@@ -186,5 +182,9 @@ public class OrderService {
 
         kafkaTemplate.send("notification-topic", notificationEvent);
         log.info("📧 Trade notification sent for Order ID: {}", order.getId());
+    }
+
+    public List<Order> getOrdersByUserId(Long userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

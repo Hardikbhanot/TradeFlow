@@ -5,6 +5,7 @@ import com.tradeflow.order_service.entity.Order;
 import com.tradeflow.order_service.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -21,19 +22,13 @@ public class OrderController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody OrderRequest request) {
 
-        // Securely override whatever they sent in the JSON with the Gateway's decrypted
-        // token ID
         request.setUserId(userId);
-
         Order newOrder = orderService.placeOrder(request);
-
         return ResponseEntity.ok(newOrder);
     }
 
-    // A simple GET endpoint to easily verify the service is running from a browser
     @GetMapping
-    public ResponseEntity<String> getOrderServiceStatus() {
-        return ResponseEntity
-                .ok("Order Service is up and running! To place an order, send a POST request to this URL.");
+    public ResponseEntity<List<Order>> getOrders(@RequestHeader("X-User-Id") Long userId) {
+        return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
     }
 }

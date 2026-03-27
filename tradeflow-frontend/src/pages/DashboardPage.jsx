@@ -83,11 +83,26 @@ export default function DashboardPage() {
         }
     }, []);
 
+    const fetchAllPrices = useCallback(async () => {
+        if (!holdings.length) return;
+        try {
+            const symbols = holdings.map(h => h.symbol).join(',');
+            const res = await api.get('/api/v1/market/prices', { params: { symbols } });
+            setPrices(prev => ({ ...prev, ...res.data }));
+        } catch {}
+    }, [holdings]);
+
     useEffect(() => {
         fetchHoldings();
         fetchWallet();
         fetchBrokerStatus();
     }, [fetchHoldings, fetchWallet, fetchBrokerStatus]);
+
+    useEffect(() => {
+        fetchAllPrices();
+        const id = setInterval(fetchAllPrices, 2000);
+        return () => clearInterval(id);
+    }, [fetchAllPrices]);
 
     useEffect(() => {
         if (holdings.length) {
@@ -159,7 +174,12 @@ export default function DashboardPage() {
 
             <div className="page-header">
                 <div>
-                    <h1>Good evening, {user?.username ?? 'Trader'} 👋</h1>
+                    <h1>
+                        {new Date().getHours() < 12 ? 'Good morning' : 
+                         new Date().getHours() < 17 ? 'Good afternoon' : 
+                         new Date().getHours() < 21 ? 'Good evening' : 'Good night'}, 
+                        {user?.username ?? 'Trader'} 👋
+                    </h1>
                     <p>Here's your portfolio summary for today.</p>
                 </div>
                 <button 

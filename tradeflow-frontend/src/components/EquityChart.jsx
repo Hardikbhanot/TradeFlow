@@ -24,14 +24,19 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function EquityChart() {
+    const firstVal = data[0]?.value ?? 0;
+    const lastVal = data[data.length - 1]?.value ?? 0;
+    const isDown = lastVal < firstVal;
+    const color = isDown ? 'var(--red)' : 'var(--primary)';
+
     return (
         <div style={{ width: '100%', height: 320, marginTop: '1rem' }}>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data}>
                     <defs>
                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                            <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={color} stopOpacity={0}/>
                         </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
@@ -46,11 +51,11 @@ export default function EquityChart() {
                         hide={true} 
                         domain={['dataMin - 10000', 'dataMax + 10000']} 
                     />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary)', strokeWidth: 1, strokeDasharray: '5 5' }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: '5 5' }} />
                     <Area 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="var(--primary)" 
+                        stroke={color} 
                         strokeWidth={3} 
                         fillOpacity={1} 
                         fill="url(#colorValue)" 

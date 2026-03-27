@@ -67,7 +67,7 @@ export default function MarketPage() {
             } catch {}
         }
         fetchAllPrices();
-        const id = setInterval(fetchAllPrices, 10000);
+        const id = setInterval(fetchAllPrices, 2000);
         return () => clearInterval(id);
     }, [allSymbols]);
 
@@ -162,7 +162,14 @@ export default function MarketPage() {
                                     contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}
                                     formatter={v => [`₹${fmt(v)}`, 'Price']}
                                 />
-                                <Line type="monotone" dataKey="price" stroke="var(--primary)" strokeWidth={3} dot={false} isAnimationActive={false} />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="price" 
+                                    stroke={(chartData.length > 1 && chartData[chartData.length-1].price < chartData[0].price) ? 'var(--red)' : 'var(--primary)'} 
+                                    strokeWidth={3} 
+                                    dot={false} 
+                                    isAnimationActive={false} 
+                                />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
