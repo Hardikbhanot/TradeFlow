@@ -21,6 +21,9 @@ public class PortfolioService {
     private final GeminiService geminiService;
     private final org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
 
+    @org.springframework.beans.factory.annotation.Value("${market.service.url:http://localhost:8085}")
+    private String marketServiceUrl;
+
     public PortfolioService(HoldingRepository holdingRepository, GeminiService geminiService) {
         this.holdingRepository = holdingRepository;
         this.geminiService = geminiService;
@@ -107,8 +110,8 @@ public class PortfolioService {
         for (Holding holding : holdings) {
             try {
                 // Fetch extended data from Market Service
-                String marketUrl = "http://market-service:8082/api/v1/market/data/" + holding.getSymbol();
-                Map<String, Object> data = restTemplate.getForObject(marketUrl, Map.class);
+                String marketUrl = marketServiceUrl + "/api/v1/market/data/" + holding.getSymbol();
+                Map<String, Object> data = (Map<String, Object>) restTemplate.getForObject(marketUrl, Map.class);
                 
                 if (data != null) {
                     BigDecimal ltp = new BigDecimal(data.get("ltp").toString());
