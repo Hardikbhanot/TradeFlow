@@ -32,4 +32,8 @@ public class Order {
 
     private BigDecimal triggerPrice;
     private BigDecimal executedPrice;
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 }

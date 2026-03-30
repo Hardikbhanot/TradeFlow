@@ -108,7 +108,10 @@ export default function LoginPage() {
                             />
                         </div>
                         <div className="form-group" style={{ marginBottom: '2rem' }}>
-                            <label className="auth-label">Password</label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <label className="auth-label">Password</label>
+                                <Link to="/forgot-password" style={{ fontSize: '0.7rem', color: 'var(--blue)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Forgot?</Link>
+                            </div>
                             <input
                                 className="form-input"
                                 type="password"
