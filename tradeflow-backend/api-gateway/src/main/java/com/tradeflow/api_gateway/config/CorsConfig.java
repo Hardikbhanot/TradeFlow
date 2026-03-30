@@ -19,11 +19,7 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList(
-            "https://tradeflow.hbhanot.tech", 
-            "http://tradeflow.hbhanot.tech",
-            "http://localhost:5173"
-        ));
+        config.addAllowedOriginPattern("*");
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(Collections.singletonList("*"));
         config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-User-Id"));
