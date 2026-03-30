@@ -6,6 +6,7 @@ import { isMarketOpen } from '../utils/marketHours';
 
 const NAV = [
     { to: '/dashboard', icon: '⊞', label: 'Dashboard' },
+    { to: '/portfolio', icon: '💼', label: 'Portfolio' },
     { to: '/market', icon: '📈', label: 'Market' },
     { to: '/orders', icon: '⚡', label: 'Orders' },
     { to: '/wallet', icon: '💳', label: 'Wallet' },

@@ -2,6 +2,7 @@ package com.tradeflow.market_service.controller;
 
 import com.tradeflow.market_service.dto.PriceHistoryPoint;
 import com.tradeflow.market_service.service.MarketService;
+import com.tradeflow.market_service.service.NewsService;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -13,15 +14,23 @@ import java.util.Map;
 public class MarketController {
 
     private final MarketService marketService;
+    private final NewsService newsService;
     private final com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService;
     private final com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService;
 
     public MarketController(MarketService marketService,
+            NewsService newsService,
             com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService,
             com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService) {
         this.marketService = marketService;
+        this.newsService = newsService;
         this.upStoxAuthService = upStoxAuthService;
         this.upstoxInstrumentService = upstoxInstrumentService;
+    }
+
+    @GetMapping("/news")
+    public List<Map<String, String>> getNews() {
+        return newsService.getLatestMarketNews();
     }
 
     @GetMapping("/price/{symbol}")
