@@ -61,4 +61,9 @@ public class MarketController {
         String token = upStoxAuthService.getAccessToken(code);
         return token != null ? "Token successfully generated: " + token : "Failed to generate Upstox token.";
     }
+
+    @GetMapping("/data/{symbol}")
+    public Map<String, Object> getExtendedData(@PathVariable String symbol) {
+        return marketService.getExtendedPriceData(symbol);
+    }
 }

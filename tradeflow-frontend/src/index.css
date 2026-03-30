@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-/* ── KINETIC Design System ── */
+/* ── TradeFlow Design System ── */
 :root {
   --primary: #00FFD1;
   --primary-dim: rgba(0, 255, 209, 0.1);
@@ -14,7 +14,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(0, 255, 209, 0.4);
 
-  --green: #00FFD1; /* Unified with Primary for KINETIC theme */
+  --green: #00FFD1;
   --green-dim: rgba(0, 255, 209, 0.1);
   --red: #FF4D4D;
   --red-dim: rgba(255, 77, 77, 0.1);
@@ -271,56 +271,93 @@ select {
   width: 100%; /* Ensure row takes full width */
 }
 
-/* ── KINETIC Table (Activity Ledger) ── */
+/* ── Activity Ledger Table ── */
 .tf-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .tf-table th {
-  padding: 1.25rem 1.5rem;
-  font-size: 0.7rem;
-  font-weight: 700;
+  padding: 1.25rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-align: left;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
 }
 
 .tf-table td {
-  padding: 1.5rem;
-  font-size: 0.9rem;
+  padding: 1.25rem 1rem;
+  font-size: 0.92rem;
   border-bottom: 1px solid var(--border);
   color: var(--text-2);
   vertical-align: middle;
+  transition: var(--transition);
+}
+
+/* Specific alignments for precision data */
+.tf-table .text-right { text-align: right; }
+.tf-table .text-center { text-align: center; }
+
+.tf-table .symbol-col { 
+  font-weight: 800; 
+  color: var(--text); 
+  letter-spacing: -0.01em;
+}
+
+.tf-table .price-col {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tf-table tbody tr:hover td {
+  background: var(--surface2);
+  color: var(--text);
 }
 
 .tf-table tr:last-child td {
   border-bottom: none;
 }
 
-.tf-table tbody tr {
-    transition: var(--transition);
-}
-
-.tf-table tbody tr:hover {
-  background: var(--surface);
-}
-
+/* ── Status Badges ── */
 .status-badge {
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.65rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.68rem;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
 }
 
-.status-successful { color: var(--primary); background: var(--primary-dim); }
-.status-pending { color: var(--gold); background: var(--gold-dim); }
-.status-failed { color: var(--red); background: var(--red-dim); }
+.status-successful, .status-completed { 
+    color: var(--primary); 
+    background: rgba(0, 255, 209, 0.08); 
+    border-color: rgba(0, 255, 209, 0.15);
+    box-shadow: 0 0 12px rgba(0, 255, 209, 0.1);
+}
+
+.status-failed, .status-rejected { 
+    color: var(--red); 
+    background: rgba(255, 77, 77, 0.08); 
+    border-color: rgba(255, 77, 77, 0.15);
+    box-shadow: 0 0 12px rgba(255, 77, 77, 0.1);
+}
+
+.status-pending { 
+    color: var(--gold); 
+    background: rgba(255, 179, 26, 0.08); 
+    border-color: rgba(255, 179, 26, 0.15);
+}
 
 .tf-table tbody tr:hover {
   background: var(--surface2);
@@ -1082,7 +1119,7 @@ select {
     box-shadow: 0 0 8px var(--primary);
 }
 
-/* ── KINETIC Trade Desk & Professional Order Panel ── */
+/* ── Professional Trade Desk ── */
 .trade-desk-container {
     background: var(--surface);
     border: 1px solid var(--border);

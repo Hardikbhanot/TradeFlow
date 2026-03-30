@@ -382,4 +382,23 @@ public class MarketService {
 
         return !time.isBefore(LocalTime.of(9, 15)) && !time.isAfter(LocalTime.of(15, 30));
     }
+
+    /**
+     * Provides extended data for AI reporting (LTP + Simulated Prev Close)
+     */
+    public Map<String, Object> getExtendedPriceData(String symbol) {
+        BigDecimal ltp = getLivePrice(symbol);
+        // Simulate a previous close slightly different from the live price
+        BigDecimal prevClose = ltp.multiply(BigDecimal.valueOf(0.985 + (Math.random() * 0.03)))
+                .setScale(2, RoundingMode.HALF_UP);
+        
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("symbol", symbol.toUpperCase());
+        data.put("ltp", ltp);
+        data.put("prevClose", prevClose);
+        data.put("change", ltp.subtract(prevClose));
+        data.put("changePercent", ltp.subtract(prevClose).divide(prevClose, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
+        
+        return data;
+    }
 }

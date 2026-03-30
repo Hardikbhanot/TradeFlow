@@ -29,4 +29,9 @@ public class PortfolioController {
             @RequestParam("quantity") Integer quantity) {
         return ResponseEntity.ok(portfolioService.hasEnoughShares(userId, symbol, exchange, quantity));
     }
+
+    @GetMapping("/ai-summary")
+    public ResponseEntity<String> getAiSummary(@RequestHeader("X-User-Id") Long userId) {
+        return ResponseEntity.ok(portfolioService.getAiPortfolioSummary(userId));
+    }
 }

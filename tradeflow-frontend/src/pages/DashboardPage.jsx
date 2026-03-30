@@ -40,6 +40,9 @@ export default function DashboardPage() {
     const { marketData, orderUpdates } = useWebSocket(user?.userId);
     const [chartData, setChartData] = useState({});
     const [ledgerTab, setLedgerTab] = useState('REAL-TIME');
+    const [loadingReport, setLoadingReport] = useState(false);
+    const [aiReport, setAiReport] = useState(null);
+    const [showAiModal, setShowAiModal] = useState(false);
 
     function addToast(msg, type = 'success') {
         const id = Date.now();
@@ -166,6 +169,42 @@ export default function DashboardPage() {
         }
     }
 
+    async function fetchAiReport() {
+        setLoadingReport(true);
+        setShowAiModal(true);
+        try {
+            const res = await api.get('/api/v1/portfolio/ai-summary');
+            setAiReport(res.data);
+        } catch (err) {
+            setAiReport("⚠️ Failed to generate AI report. Please ensure GEMINI_API_KEY is configured.");
+        } finally {
+            setLoadingReport(false);
+        }
+    }
+
+    const renderAiContent = (text) => {
+        if (!text) return null;
+        return text.split('\n').map((line, i) => {
+            // Very basic markdown parsing
+            let formattedLine = line;
+            if (line.startsWith('### ')) return <h3 key={i} style={{ color: 'var(--primary)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>{line.slice(4)}</h3>;
+            if (line.startsWith('## ')) return <h2 key={i} style={{ color: 'var(--primary)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>{line.slice(3)}</h2>;
+            if (line.startsWith('* ') || line.startsWith('- ')) return <li key={i} style={{ marginLeft: '1.5rem', marginBottom: '0.5rem' }}>{line.slice(2)}</li>;
+            
+            // Bold
+            const boldParts = line.split('**');
+            if (boldParts.length > 1) {
+                return (
+                    <p key={i} style={{ marginBottom: '0.75rem', lineHeight: '1.6' }}>
+                        {boldParts.map((part, index) => (index % 2 === 1 ? <strong key={index} style={{ color: 'var(--primary)' }}>{part}</strong> : part))}
+                    </p>
+                );
+            }
+            
+            return <p key={i} style={{ marginBottom: '0.75rem', lineHeight: '1.6' }}>{line}</p>;
+        });
+    };
+
     const fmt = (n) => Number(n ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
@@ -236,26 +275,33 @@ export default function DashboardPage() {
                         <div className="dashboard-left">
                             <HoldingsGrid holdings={holdings} marketData={marketData} prices={prices} />
                             <div className="card" style={{ padding: 0 }}>
-                                <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Activity Ledger</span>
-                                        <div className="tab-row">
+                                <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', color: 'var(--text)' }}>Activity Ledger</span>
+                                        <div className="tab-row" style={{ padding: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
                                             <button 
                                                 className="btn" 
-                                                style={{ fontSize: '0.65rem', padding: '4px 12px', background: ledgerTab === 'REAL-TIME' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REAL-TIME' ? 'var(--primary)' : 'var(--text-muted)' }}
+                                                style={{ fontSize: '0.65rem', padding: '6px 16px', background: ledgerTab === 'REAL-TIME' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REAL-TIME' ? 'var(--primary)' : 'var(--text-muted)', border: ledgerTab === 'REAL-TIME' ? '1px solid var(--primary-dim)' : '1px solid transparent' }}
                                                 onClick={() => setLedgerTab('REAL-TIME')}
                                             >
                                                 REAL-TIME
                                             </button>
                                             <button 
                                                 className="btn" 
-                                                style={{ fontSize: '0.65rem', padding: '4px 12px', background: ledgerTab === 'REPORTS' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REPORTS' ? 'var(--primary)' : 'var(--text-muted)' }}
+                                                style={{ fontSize: '0.65rem', padding: '6px 16px', background: ledgerTab === 'REPORTS' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REPORTS' ? 'var(--primary)' : 'var(--text-muted)', border: ledgerTab === 'REPORTS' ? '1px solid var(--primary-dim)' : '1px solid transparent' }}
                                                 onClick={() => setLedgerTab('REPORTS')}
                                             >
                                                 REPORTS
                                             </button>
                                         </div>
                                     </div>
+                                    <button 
+                                        className="btn btn-primary" 
+                                        style={{ fontSize: '0.75rem', padding: '8px 16px', fontWeight: 800, background: 'linear-gradient(90deg, #00FFD1 0%, #00BFFF 100%)', color: '#000', boxShadow: '0 0 20px rgba(0,255,209,0.3)' }}
+                                        onClick={fetchAiReport}
+                                    >
+                                        ✨ AI PORTFOLIO INSIGHTS
+                                    </button>
                                 </div>
                                 {loadingHoldings ? (
                                     <div className="centered-spinner"><div className="spinner" /></div>
@@ -423,6 +469,64 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* AI Report Modal */}
+            {showAiModal && (
+                <div className="modal-overlay" style={{ backdropFilter: 'blur(12px)', zIndex: 1000 }}>
+                    <style>{`
+                        @keyframes neural-scan {
+                          0% { transform: translateY(-100%); opacity: 0; }
+                          50% { opacity: 1; }
+                          100% { transform: translateY(100%); opacity: 0; }
+                        }
+                        .scanning-line {
+                          position: absolute;
+                          top: 0;
+                          left: 0;
+                          right: 0;
+                          height: 2px;
+                          background: linear-gradient(90deg, transparent, var(--primary), transparent);
+                          box-shadow: 0 0 15px var(--primary);
+                          animation: neural-scan 2s linear infinite;
+                        }
+                    `}</style>
+                    <div className="card" style={{ maxWidth: '700px', width: '90%', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid var(--primary-dim)', boxShadow: '0 0 50px rgba(0,255,209,0.1)' }}>
+                        {loadingReport && <div className="scanning-line" />}
+                        
+                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: 'var(--primary-dim)', color: 'var(--primary)', padding: '8px', borderRadius: '8px', fontSize: '1.2rem' }}>✨</div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text)' }}>AI Market Intelligence</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--primary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em' }}>{loadingReport ? 'Neural Analysis in Progress...' : 'Portfolio Insight Generated'}</div>
+                                </div>
+                            </div>
+                            <button className="btn btn-ghost" style={{ padding: '8px' }} onClick={() => setShowAiModal(false)}>✕</button>
+                        </div>
+
+                        <div style={{ padding: '2rem', overflowY: 'auto', flex: 1, background: 'rgba(255,255,255,0.01)' }}>
+                            {loadingReport ? (
+                                <div style={{ textAlign: 'center', padding: '4rem' }}>
+                                    <div className="spinner" style={{ margin: '0 auto 2rem', width: '50px', height: '50px', borderColor: 'var(--primary)', borderRightColor: 'transparent' }} />
+                                    <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.1em' }}>SYNCHRONIZING PORTFOLIO DELTAS...</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '1rem' }}>Consulting TradeFlow AI Strategist</div>
+                                </div>
+                            ) : (
+                                <div style={{ color: 'var(--text-2)', fontSize: '0.95rem' }}>
+                                    {renderAiContent(aiReport)}
+                                    <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '0.8rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                        💡 <strong>Pro Tip:</strong> Re-generate this report after major market moves to see revised strategic positioning.
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--surface)' }}>
+                            <button className="btn btn-primary" style={{ padding: '0.75rem 2rem', fontWeight: 800 }} onClick={() => setShowAiModal(false)}>ACKNOWLEDGE INSIGHTS</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </Layout>
     );

@@ -89,7 +89,7 @@ export default function OrdersPage() {
         <Layout title="Place Order">
             <div className="page-header">
                 <h1>Execution Terminal</h1>
-                <p>Deploy capital with high-precision KINETIC execution controls.</p>
+                <p>Manage your funds and transaction history in premium style.</p>
             </div>
 
             <div className="orders-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) 2fr', gap: '2rem', alignItems: 'start' }}>
@@ -210,51 +210,61 @@ export default function OrdersPage() {
                 <div className="history-side">
                     <div className="card" style={{ padding: 0 }}>
                         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Past Orders</h2>
-                            <button className="btn btn-ghost" style={{ fontSize: '0.7rem' }} onClick={fetchHistory}>REFRESH</button>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Past Orders</h2>
+                            <button className="btn btn-ghost" style={{ fontSize: '0.65rem', padding: '6px 12px' }} onClick={fetchHistory}>REFRESH</button>
                         </div>
                         <div className="table-container" style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                            <table className="ledger-table">
+                            <table className="tf-table">
                                 <thead>
                                     <tr>
                                         <th>Symbol</th>
-                                        <th>Side</th>
-                                        <th>Qty</th>
-                                        <th>Type</th>
-                                        <th>Price</th>
-                                        <th>Status</th>
+                                        <th className="text-center">Side</th>
+                                        <th className="text-right">Qty</th>
+                                        <th className="text-center">Type</th>
+                                        <th className="text-right">Price</th>
+                                        <th className="text-center">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {history.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                                No recent orders found.
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+                                                <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.2 }}>📋</div>
+                                                Start your trading journey with advanced tools.
                                             </td>
                                         </tr>
                                     ) : (
                                         history.map(order => (
                                             <tr key={order.id}>
-                                                <td style={{ fontWeight: 700 }}>{order.symbol}</td>
-                                                <td>
-                                                    <span style={{ color: order.side === 'BUY' ? 'var(--primary)' : 'var(--red)', fontWeight: 800 }}>
+                                                <td className="symbol-col">{order.symbol}</td>
+                                                <td className="text-center">
+                                                    <span style={{ 
+                                                        color: order.side === 'BUY' ? 'var(--primary)' : 'var(--red)', 
+                                                        fontWeight: 900,
+                                                        fontSize: '0.8rem',
+                                                        letterSpacing: '0.05em'
+                                                    }}>
                                                         {order.side}
                                                     </span>
                                                 </td>
-                                                <td>{order.quantity}</td>
-                                                <td style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{order.type}</td>
-                                                <td>₹{fmt(order.executedPrice || order.triggerPrice || 0)}</td>
-                                                <td>
+                                                <td className="text-right" style={{ fontWeight: 600 }}>{order.quantity}</td>
+                                                <td className="text-center">
                                                     <span style={{ 
                                                         fontSize: '0.65rem', 
-                                                        fontWeight: 800, 
-                                                        padding: '4px 8px', 
+                                                        fontWeight: 700, 
+                                                        color: 'var(--text-muted)',
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        padding: '2px 6px',
                                                         borderRadius: '4px',
-                                                        background: order.status === 'COMPLETED' ? 'rgba(0,255,150,0.1)' : 
-                                                                    order.status === 'REJECTED' ? 'rgba(255,0,80,0.1)' : 'rgba(255,180,0,0.1)',
-                                                        color: order.status === 'COMPLETED' ? 'var(--green)' : 
-                                                               order.status === 'REJECTED' ? 'var(--red)' : 'var(--yellow)'
+                                                        border: '1px solid var(--border)'
                                                     }}>
+                                                        {order.type}
+                                                    </span>
+                                                </td>
+                                                <td className="text-right price-col">₹{fmt(order.executedPrice || order.triggerPrice || 0)}</td>
+                                                <td className="text-center">
+                                                    <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                                                        {order.status === 'COMPLETED' && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)', boxShadow: '0 0 6px var(--primary)' }}></span>}
                                                         {order.status}
                                                     </span>
                                                 </td>
@@ -268,7 +278,7 @@ export default function OrdersPage() {
                 </div>
             </div>
 
-            {/* KINETIC Confirmation Modal */}
+            {/* Premium Confirmation Modal */}
             {showConfirm && (
                 <div className="modal-overlay">
                     <div className="card execution-modal">

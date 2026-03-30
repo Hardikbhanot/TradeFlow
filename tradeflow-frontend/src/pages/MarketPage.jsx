@@ -116,7 +116,7 @@ export default function MarketPage() {
             <div className="page-header">
                 <div>
                     <h1>Market Intelligence</h1>
-                    <p>Track your favorite assets with KINETIC real-time feeds.</p>
+                    <p>Deploy capital with high-precision execution controls.</p>
                 </div>
                 <div className="header-search-container">
                     <SymbolSearch onSelect={handleSearchSelect} />
@@ -124,7 +124,7 @@ export default function MarketPage() {
             </div>
 
             <div className="dashboard-grid">
-                {/* Main Chart Card */}
+                {/* Premium Confirmation Modal */}
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                         <div>
