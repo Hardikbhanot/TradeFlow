@@ -6,7 +6,7 @@ import com.tradeflow.auth_service.repository.UserRepository;
 import com.tradeflow.auth_service.repository.OtpRepository;
 import com.tradeflow.auth_service.repository.PasswordResetTokenRepository;
 import com.tradeflow.auth_service.entity.PasswordResetToken;
-import com.tradeflow.auth_service.dto.OtpRequestedEvent;
+import com.tradeflow.auth_service.dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -42,8 +42,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestParam String username, @RequestParam String password,
-            @RequestParam String email) {
+    public ResponseEntity<String> registerUser(@RequestBody RegisterRequest request) {
+        String username = request.getUsername();
+        String password = request.getPassword();
+        String email = request.getEmail();
 
         if (userRepository.findByUsername(username).isPresent()) {
             return ResponseEntity.badRequest().body("Username already exists!");
@@ -59,7 +61,10 @@ public class AuthController {
 
     @PostMapping("/login")
     @Transactional
-    public ResponseEntity<?> loginUser(@RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
+        String username = request.getUsername();
+        String password = request.getPassword();
+
         Optional<AppUser> userOpt = userRepository.findByUsername(username);
 
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
@@ -92,7 +97,10 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     @Transactional
-    public ResponseEntity<?> verifyOtp(@RequestParam String username, @RequestParam String otp) {
+    public ResponseEntity<?> verifyOtp(@RequestBody OtpVerifyRequest request) {
+        String username = request.getUsername();
+        String otp = request.getOtp();
+
         Optional<AppUser> userOpt = userRepository.findByUsername(username);
         Optional<OtpEntity> otpOpt = otpRepository.findByUsername(username);
 
@@ -110,14 +118,12 @@ public class AuthController {
             return ResponseEntity.status(401).body("Incorrect OTP");
         }
 
-
         AppUser user = userOpt.get();
         otpRepository.deleteByUsername(username);
         String token = jwtUtil.generateToken(user.getId().toString(), user.getUsername(), user.getEmail());
 
         return ResponseEntity.ok(Map.of("token", token));
     }
-
 
     @GetMapping("/users/{id}/email")
     public ResponseEntity<String> getUserEmailById(@PathVariable Long id) {
@@ -128,19 +134,14 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     @Transactional
-    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        String email = request.getEmail();
         Optional<AppUser> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
-            // Re-traceable security: don't reveal if user exists
             return ResponseEntity.ok(Map.of("message", "If an account with that email exists, a reset link has been sent."));
         }
 
         AppUser user = userOpt.get();
-        // Clear any old tokens for this user
-        // Note: deleteByUser requires a @Transactional and possibly an @Modifying query in repo
-        // but here we can just delete from the repo if we have a findBy method.
-        // For simplicity, let's just create a new one.
-
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = new PasswordResetToken(token, user);
         passwordResetTokenRepository.save(resetToken);
@@ -154,7 +155,10 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     @Transactional
-    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        String token = request.getToken();
+        String newPassword = request.getNewPassword();
+
         Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository.findByToken(token);
 
         if (tokenOpt.isEmpty()) {
@@ -171,7 +175,6 @@ public class AuthController {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Delete the token after use
         passwordResetTokenRepository.delete(resetToken);
 
         return ResponseEntity.ok(Map.of("message", "Password has been successfully reset."));

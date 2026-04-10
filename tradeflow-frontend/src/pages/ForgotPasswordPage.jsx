@@ -15,9 +15,7 @@ export default function ForgotPasswordPage() {
         setLoading(true);
 
         try {
-            const params = new URLSearchParams();
-            params.append('email', email);
-            const res = await api.post('/auth/forgot-password', params);
+            const res = await api.post('/auth/forgot-password', { email });
             setMessage(res.data?.message || 'Check your email for reset instructions.');
         } catch (err) {
             const data = err.response?.data;

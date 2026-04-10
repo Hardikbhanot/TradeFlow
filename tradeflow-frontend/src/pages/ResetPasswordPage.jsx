@@ -29,11 +29,10 @@ export default function ResetPasswordPage() {
 
         setLoading(true);
         try {
-            const params = new URLSearchParams();
-            params.append('token', token);
-            params.append('newPassword', form.password);
-
-            const res = await api.post('/auth/reset-password', params);
+            const res = await api.post('/auth/reset-password', {
+                token,
+                newPassword: form.password
+            });
             setMessage(res.data?.message || 'Password successfully reset.');
             setTimeout(() => navigate('/login'), 3000);
         } catch (err) {

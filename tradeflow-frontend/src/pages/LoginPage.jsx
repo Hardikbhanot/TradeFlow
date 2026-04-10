@@ -18,11 +18,10 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const params = new URLSearchParams();
-            params.append('username', form.username);
-            params.append('password', form.password);
-
-            const res = await api.post('/auth/login', params);
+            const res = await api.post('/auth/login', {
+                username: form.username,
+                password: form.password
+            });
 
             if (res.data?.requiresOtp) {
                 setOtpStep(true);
@@ -58,11 +57,10 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const params = new URLSearchParams();
-            params.append('username', form.username);
-            params.append('otp', form.otp);
-
-            const res = await api.post('/auth/verify-otp', params);
+            const res = await api.post('/auth/verify-otp', {
+                username: form.username,
+                otp: form.otp
+            });
             const token = res.data?.token || (typeof res.data === 'string' ? res.data : null);
 
             if (!token) {
