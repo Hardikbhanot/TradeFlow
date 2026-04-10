@@ -1205,18 +1205,18 @@ select {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at center, #10161d 0%, var(--bg) 100%);
+    background: radial-gradient(circle at center, rgba(0, 255, 209, 0.05) 0%, var(--bg) 60%);
 }
 
 .auth-card-v2 {
     width: 100%;
     max-width: 420px;
-    background: rgba(13, 20, 28, 0.7);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 255, 209, 0.2);
     border-radius: 20px;
     padding: 3rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 255, 209, 0.05);
     animation: fadeIn 0.4s ease-out;
 }
 
@@ -1247,25 +1247,27 @@ select {
 }
 
 .btn-auth-primary {
-    background: #3B82F6; /* Electric Blue as per user image */
-    color: #fff;
-    font-weight: 600;
+    background: linear-gradient(90deg, #00FFD1 0%, #00BFFF 100%);
+    color: #000;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     padding: 0.9rem;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
     width: 100%;
     cursor: pointer;
 }
 
 .btn-auth-primary:hover {
-    background: #2563EB;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 255, 209, 0.3);
 }
 
 .auth-footer {
@@ -1276,10 +1278,148 @@ select {
 }
 
 .auth-footer a {
-    color: #3B82F6;
+    color: var(--primary);
     text-decoration: none;
     margin-left: 5px;
     font-weight: 600;
+    transition: var(--transition);
+}
+
+.auth-footer a:hover {
+    text-shadow: 0 0 10px rgba(0, 255, 209, 0.5);
+}
+
+/* ── KINETIC Landing Page ── */
+.landing-page {
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.landing-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 4rem;
+    z-index: 10;
+}
+
+.landing-nav .logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+.landing-nav .logo span {
+    color: var(--primary);
+}
+
+.landing-hero {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 6rem;
+    z-index: 10;
+    gap: 4rem;
+}
+
+.landing-hero-content {
+    flex: 1;
+    max-width: 600px;
+    animation: slideInLeft 0.8s ease-out;
+}
+
+.landing-hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+}
+
+.landing-hero-title span {
+    background: linear-gradient(90deg, #00FFD1 0%, #00BFFF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.landing-hero-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+}
+
+.landing-hero-actions {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.landing-hero-visual {
+    flex: 1;
+    position: relative;
+    animation: floatUpDown 6s ease-in-out infinite;
+    perspective: 1000px;
+}
+
+.glow-orb {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 255, 209, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    filter: blur(60px);
+}
+
+.landing-mockup {
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 80px rgba(0, 255, 209, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(20px);
+    transform: rotateY(-15deg) rotateX(10deg);
+    transform-style: preserve-3d;
+}
+
+@keyframes floatUpDown {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes slideInLeft {
+    0% { opacity: 0; transform: translateX(-50px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 1024px) {
+    .landing-hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    .landing-hero-actions {
+        justify-content: center;
+    }
+    .landing-mockup {
+        transform: rotateY(0deg) rotateX(0deg);
+        margin-top: 3rem;
+    }
 }
 
 /* Modal / Razorpay Mockup */
