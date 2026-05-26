@@ -92,6 +92,7 @@ public class AuthController {
 
             OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode);
             kafkaTemplate.send("otp-topic", event);
+            System.out.println("📧 [LOGIN OTP] Generated OTP for " + username + ": " + otpCode);
 
             return ResponseEntity.ok(Map.of(
                     "requiresOtp", true,
