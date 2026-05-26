@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import io.jsonwebtoken.Claims;
+import java.time.Duration;
+import java.util.Date;
 import java.util.UUID;
 
 @RestController
@@ -29,16 +33,19 @@ public class AuthController {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final com.tradeflow.auth_service.util.JwtUtil jwtUtil;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final StringRedisTemplate redisTemplate;
 
     public AuthController(UserRepository userRepository, OtpRepository otpRepository,
             PasswordResetTokenRepository passwordResetTokenRepository, PasswordEncoder passwordEncoder,
-            com.tradeflow.auth_service.util.JwtUtil jwtUtil, KafkaTemplate<String, Object> kafkaTemplate) {
+            com.tradeflow.auth_service.util.JwtUtil jwtUtil, KafkaTemplate<String, Object> kafkaTemplate,
+            StringRedisTemplate redisTemplate) {
         this.userRepository = userRepository;
         this.otpRepository = otpRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.kafkaTemplate = kafkaTemplate;
+        this.redisTemplate = redisTemplate;
     }
 
     @PostMapping("/register")
@@ -178,5 +185,83 @@ public class AuthController {
         passwordResetTokenRepository.delete(resetToken);
 
         return ResponseEntity.ok(Map.of("message", "Password has been successfully reset."));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing or invalid Authorization header"));
+        }
+        String token = authorizationHeader.substring(7);
+        try {
+            Claims claims = jwtUtil.extractAllClaims(token);
+            Date expiration = claims.getExpiration();
+            long remainingTtlMillis = expiration.getTime() - System.currentTimeMillis();
+            if (remainingTtlMillis > 0) {
+                redisTemplate.opsForValue().set("jwt_blacklist:" + token, "blacklisted", Duration.ofMillis(remainingTtlMillis));
+            }
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        }
+    }
+
+    @PostMapping("/otp/generate-for-sell")
+    @Transactional
+    public ResponseEntity<Void> generateOtpForSell(@RequestParam Long userId) {
+        Optional<AppUser> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        AppUser user = userOpt.get();
+        String username = user.getUsername();
+        String otpCode = String.format("%06d", new Random().nextInt(999999));
+
+        otpRepository.findByUsername(username).ifPresent(existingOtp -> {
+            otpRepository.delete(existingOtp);
+            otpRepository.flush();
+        });
+
+        OtpEntity otpEntity = new OtpEntity();
+        otpEntity.setUsername(username);
+        otpEntity.setOtpCode(otpCode);
+        otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        otpRepository.save(otpEntity);
+
+        // Publish event to Kafka to simulate/send the email
+        OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode);
+        kafkaTemplate.send("otp-topic", event);
+        System.out.println("📧 [SELL OTP] Generated OTP for User ID " + userId + " (" + username + "): " + otpCode);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/otp/verify-for-sell")
+    @Transactional
+    public ResponseEntity<Boolean> verifyOtpForSell(@RequestParam Long userId, @RequestParam String otp) {
+        Optional<AppUser> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.ok(false);
+        }
+        AppUser user = userOpt.get();
+        String username = user.getUsername();
+        Optional<OtpEntity> otpOpt = otpRepository.findByUsername(username);
+
+        if (otpOpt.isEmpty()) {
+            return ResponseEntity.ok(false);
+        }
+
+        OtpEntity otpEntity = otpOpt.get();
+        if (otpEntity.getExpiresAt().isBefore(LocalDateTime.now())) {
+            otpRepository.deleteByUsername(username);
+            return ResponseEntity.ok(false);
+        }
+
+        if (!otpEntity.getOtpCode().equals(otp)) {
+            return ResponseEntity.ok(false);
+        }
+
+        otpRepository.deleteByUsername(username);
+        return ResponseEntity.ok(true);
     }
 }

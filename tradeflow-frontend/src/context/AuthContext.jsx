@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import api from '../api/axios';
 
 const AuthContext = createContext(null);
 
@@ -41,9 +42,15 @@ export function AuthProvider({ children }) {
         setToken(jwt);
     }, []);
 
-    const logout = useCallback(() => {
-        localStorage.removeItem('tf_token');
-        setToken(null);
+    const logout = useCallback(async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch {
+            // ignore network/auth errors to ensure user gets logged out locally
+        } finally {
+            localStorage.removeItem('tf_token');
+            setToken(null);
+        }
     }, []);
 
     return (

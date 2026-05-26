@@ -22,4 +22,6 @@ public class OrderRequest {
 
     // Optional for Market, Required for Limit/SL
     private BigDecimal triggerPrice;
+
+    private String otp;
 }

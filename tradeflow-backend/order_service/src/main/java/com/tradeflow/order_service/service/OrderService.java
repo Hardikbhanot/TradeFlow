@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import com.tradeflow.order_service.client.MarketClient;
+import com.tradeflow.order_service.client.AuthClient;
 import com.tradeflow.order_service.enums.OrderSide;
 import com.tradeflow.order_service.dto.OrderRequest;
 import com.tradeflow.order_service.dto.OrderCompletedEvent;
@@ -27,24 +28,41 @@ public class OrderService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final PortfolioClient portfolioClient;
     private final MarketClient marketClient;
+    private final AuthClient authClient;
 
     private static final String TOPIC = "order-created-topic";
 
     public OrderService(OrderRepository orderRepository,
                         KafkaTemplate<String, Object> kafkaTemplate,
                         PortfolioClient portfolioClient,
-                        MarketClient marketClient) {
+                        MarketClient marketClient,
+                        AuthClient authClient) {
         this.orderRepository = orderRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.portfolioClient = portfolioClient;
         this.marketClient = marketClient;
+        this.authClient = authClient;
     }
 
     @Transactional
     public Order placeOrder(OrderRequest request) {
 
-        // 1. SELL VALIDATION (The "Holdings" Guard)
+        // 1. SELL VALIDATION (The "Holdings" Guard & OTP Verification)
         if (request.getSide() == OrderSide.SELL) {
+            // Check if OTP is provided
+            if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
+                log.info("🔐 Sell Order requires OTP. Generating OTP for User {}", request.getUserId());
+                authClient.generateOtpForSell(request.getUserId());
+                throw new RuntimeException("OTP_REQUIRED");
+            }
+
+            // Verify OTP
+            boolean isOtpValid = authClient.verifyOtpForSell(request.getUserId(), request.getOtp());
+            if (!isOtpValid) {
+                log.warn("❌ Sell Order Rejected: Invalid OTP code provided by User {}", request.getUserId());
+                throw new RuntimeException("INVALID_OTP");
+            }
+
             boolean hasStock = portfolioClient.hasEnoughShares(
                     request.getUserId(), request.getSymbol(), request.getExchange(), request.getQuantity().intValue());
 

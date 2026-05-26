@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.Collections;
@@ -22,8 +25,15 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String SECRET_KEY_STRING = "TradeFlowSuperSecretKeyForJwtAuthentication2026!";
-    private final SecretKey secretKey = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes());
+    private final SecretKey secretKey;
+    private final StringRedisTemplate redisTemplate;
+
+    public JwtAuthenticationFilter(
+            @Value("${jwt.secret:TradeFlowSuperSecretKeyForJwtAuthentication2026!}") String secretKeyString,
+            StringRedisTemplate redisTemplate) {
+        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -57,6 +67,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             final String jwtToken = token.substring(7);
+
+            // Check if token is blacklisted in Redis
+            String redisKey = "jwt_blacklist:" + jwtToken;
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(redisKey))) {
+                onError(response, "Token has been invalidated (logged out)");
+                return;
+            }
 
             String userId = null;
             try {

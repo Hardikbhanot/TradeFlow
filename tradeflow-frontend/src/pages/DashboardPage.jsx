@@ -43,6 +43,11 @@ export default function DashboardPage() {
     const [loadingReport, setLoadingReport] = useState(false);
     const [aiReport, setAiReport] = useState(null);
     const [showAiModal, setShowAiModal] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [otpError, setOtpError] = useState('');
+    const [otpPlacing, setOtpPlacing] = useState(false);
+    const [pendingOrder, setPendingOrder] = useState(null);
 
     function addToast(msg, type = 'success') {
         const id = Date.now();
@@ -145,27 +150,62 @@ export default function DashboardPage() {
     async function placeQuickOrder(e) {
         e.preventDefault();
         setPlacing(true);
-        try {
-            const triggerPrice = orderForm.orderType === 'MARKET'
-                ? null
-                : (orderForm.pricePerUnit ? parseFloat(orderForm.pricePerUnit) : null);
+        const triggerPrice = orderForm.orderType === 'MARKET'
+            ? null
+            : (orderForm.pricePerUnit ? parseFloat(orderForm.pricePerUnit) : null);
 
-            await api.post('/api/v1/orders', {
-                symbol: orderForm.symbol.toUpperCase(),
-                quantity: parseInt(orderForm.quantity),
-                exchange: orderForm.exchange,
-                side,
-                orderType: orderForm.orderType,
-                pricePerUnit: orderForm.pricePerUnit ? parseFloat(orderForm.pricePerUnit) : null,
-                triggerPrice,
-            });
+        const orderDetails = {
+            symbol: orderForm.symbol.toUpperCase(),
+            quantity: parseInt(orderForm.quantity),
+            exchange: orderForm.exchange,
+            side,
+            orderType: orderForm.orderType,
+            pricePerUnit: orderForm.pricePerUnit ? parseFloat(orderForm.pricePerUnit) : null,
+            triggerPrice,
+        };
+
+        try {
+            await api.post('/api/v1/orders', orderDetails);
             addToast(`${side} order placed for ${orderForm.symbol.toUpperCase()}!`);
             setOrderForm(f => ({ ...f, symbol: '', quantity: '', pricePerUnit: '' }));
             setTimeout(fetchHoldings, 2000);
         } catch (err) {
-            addToast(err.response?.data?.message ?? 'Order failed', 'error');
+            if (err.response?.data?.status === 'OTP_REQUIRED') {
+                addToast('Secure OTP sent to your email!', 'success');
+                setPendingOrder(orderDetails);
+                setOtpCode('');
+                setOtpError('');
+                setShowOtpModal(true);
+            } else {
+                addToast(err.response?.data?.message ?? 'Order failed', 'error');
+            }
         } finally {
             setPlacing(false);
+        }
+    }
+
+    async function handleOtpSubmit(e) {
+        e.preventDefault();
+        if (!otpCode || otpCode.trim().length !== 6) {
+            setOtpError('Please enter a 6-digit OTP code.');
+            return;
+        }
+        setOtpPlacing(true);
+        setOtpError('');
+        try {
+            await api.post('/api/v1/orders', {
+                ...pendingOrder,
+                otp: otpCode,
+            });
+            addToast(`SELL order placed for ${pendingOrder.symbol}!`);
+            setShowOtpModal(false);
+            setPendingOrder(null);
+            setOrderForm(f => ({ ...f, symbol: '', quantity: '', pricePerUnit: '' }));
+            setTimeout(fetchHoldings, 2000);
+        } catch (err) {
+            setOtpError(err.response?.data?.message ?? 'Incorrect or expired OTP');
+        } finally {
+            setOtpPlacing(false);
         }
     }
 
@@ -525,6 +565,59 @@ export default function DashboardPage() {
                         <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--surface)' }}>
                             <button className="btn btn-primary" style={{ padding: '0.75rem 2rem', fontWeight: 800 }} onClick={() => setShowAiModal(false)}>ACKNOWLEDGE INSIGHTS</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Sell OTP Verification Modal */}
+            {showOtpModal && (
+                <div className="modal-overlay" style={{ backdropFilter: 'blur(12px)', zIndex: 1001 }}>
+                    <div className="card" style={{ maxWidth: '450px', width: '90%', border: '1px solid var(--red-dim)', boxShadow: '0 0 50px rgba(255,75,75,0.1)', animation: 'fadeIn 0.3s ease' }}>
+                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: 'rgba(255,75,75,0.1)', color: 'var(--red)', padding: '8px', borderRadius: '8px', fontSize: '1.2rem' }}>🔐</div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text)' }}>Confirm Transaction</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--red)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em' }}>Secure Sell OTP Guard</div>
+                                </div>
+                            </div>
+                            <button className="btn btn-ghost" style={{ padding: '8px' }} onClick={() => { setShowOtpModal(false); setPendingOrder(null); }}>✕</button>
+                        </div>
+
+                        <form onSubmit={handleOtpSubmit}>
+                            <div style={{ padding: '2rem' }}>
+                                <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                                    A 6-digit one-time passcode has been sent to your registered email to authorize the selling of <strong>{pendingOrder?.quantity} shares</strong> of <strong>{pendingOrder?.symbol}</strong>.
+                                </p>
+                                
+                                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Enter Verification Code</label>
+                                    <input 
+                                        className="form-input" 
+                                        type="text" 
+                                        maxLength="6"
+                                        placeholder="000000" 
+                                        style={{ letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.5rem', fontWeight: 800, height: '50px' }}
+                                        value={otpCode}
+                                        onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                        required 
+                                    />
+                                </div>
+
+                                {otpError && (
+                                    <div style={{ color: 'var(--red)', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.5rem', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                        ⚠️ {otpError}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '12px', justifyContent: 'flex-end', background: 'var(--surface)' }}>
+                                <button type="button" className="btn btn-ghost" onClick={() => { setShowOtpModal(false); setPendingOrder(null); }} style={{ fontWeight: 800 }}>CANCEL</button>
+                                <button type="submit" className="btn btn-red" disabled={otpPlacing} style={{ padding: '0.75rem 2rem', fontWeight: 800 }}>
+                                    {otpPlacing ? 'VERIFYING...' : 'CONFIRM & SELL'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

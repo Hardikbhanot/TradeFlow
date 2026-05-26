@@ -14,13 +14,14 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    // IMPORTANT: In production, this should be an environment variable.
-    // Must be at least 256 bits (32 characters) for HS256
-    private static final String SECRET_KEY_STRING = "TradeFlowSuperSecretKeyForJwtAuthentication2026!";
-    private final SecretKey secretKey = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes());
+    private final SecretKey secretKey;
 
-    // 24 Hours in milliseconds
-    private static final long EXPIRATION_TIME = 86400000;
+    // 30 Minutes in milliseconds
+    private static final long EXPIRATION_TIME = 1800000;
+
+    public JwtUtil(@org.springframework.beans.factory.annotation.Value("${jwt.secret:TradeFlowSuperSecretKeyForJwtAuthentication2026!}") String secretKeyString) {
+        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
+    }
 
     public String generateToken(String userId, String username, String email) {
         Map<String, Object> claims = new HashMap<>();
