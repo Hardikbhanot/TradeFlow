@@ -70,10 +70,10 @@ export default function PortfolioPage() {
                 </div>
             </div>
 
-            <div className="dashboard-grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
+            <div className="dashboard-grid">
                 <div className="dashboard-left">
                     <div className="hero-card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(0,255,209,0.05) 0%, rgba(0,191,255,0.05) 100%)' }}>
-                        <div className="hero-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        <div className="hero-stats-grid">
                             <div className="hero-stat-item">
                                 <div className="label">TOTAL INVESTED</div>
                                 <div className="value">₹{fmt(stats.invested)}</div>

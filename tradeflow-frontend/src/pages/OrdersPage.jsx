@@ -160,7 +160,7 @@ export default function OrdersPage() {
                 <p>Manage your funds and transaction history in premium style.</p>
             </div>
 
-            <div className="orders-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) 2fr', gap: '2rem', alignItems: 'start' }}>
+            <div className="orders-grid">
                 <div className="execution-side">
                     {result && (
                         <div style={{

@@ -1557,8 +1557,21 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .orders-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+
   /* Wallet Overrides */
   .wallet-balance-card .wamount {
     font-size: 1.8rem;
   }
+}
+
+/* ── Orders Page Grid Layout ── */
+.orders-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 2fr;
+  gap: 2rem;
+  align-items: start;
 }

@@ -40,6 +40,7 @@ export default function DashboardPage() {
     const { marketData, orderUpdates } = useWebSocket(user?.userId);
     const [chartData, setChartData] = useState({});
     const [ledgerTab, setLedgerTab] = useState('REAL-TIME');
+    const [history, setHistory] = useState([]);
     const [loadingReport, setLoadingReport] = useState(false);
     const [aiReport, setAiReport] = useState(null);
     const [showAiModal, setShowAiModal] = useState(false);
@@ -91,6 +92,13 @@ export default function DashboardPage() {
         }
     }, []);
 
+    const fetchHistory = useCallback(async () => {
+        try {
+            const res = await api.get('/api/v1/orders');
+            setHistory(res.data);
+        } catch {}
+    }, []);
+
     const fetchAllPrices = useCallback(async () => {
         if (!holdings.length) return;
         try {
@@ -104,7 +112,8 @@ export default function DashboardPage() {
         fetchHoldings();
         fetchWallet();
         fetchBrokerStatus();
-    }, [fetchHoldings, fetchWallet, fetchBrokerStatus]);
+        fetchHistory();
+    }, [fetchHoldings, fetchWallet, fetchBrokerStatus, fetchHistory]);
 
     useEffect(() => {
         fetchAllPrices();
@@ -127,8 +136,9 @@ export default function DashboardPage() {
             addToast(`Update: ${orderUpdates.side} order for ${orderUpdates.symbol} is COMPLETED!`);
             fetchHoldings();
             fetchWallet();
+            fetchHistory();
         }
-    }, [orderUpdates, fetchHoldings, fetchWallet]);
+    }, [orderUpdates, fetchHoldings, fetchWallet, fetchHistory]);
 
 
     const totalInvested = holdings.reduce((s, h) => s + ((h.avgPrice ?? 0) * (h.totalQuantity ?? 0)), 0);
@@ -345,6 +355,63 @@ export default function DashboardPage() {
                                 </div>
                                 {loadingHoldings ? (
                                     <div className="centered-spinner"><div className="spinner" /></div>
+                                ) : ledgerTab === 'REPORTS' ? (
+                                    history.length === 0 ? (
+                                        <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.2 }}>📋</div>
+                                            No transaction history reported yet. Place some trades.
+                                        </div>
+                                    ) : (
+                                        <table className="tf-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>SYMBOL</th>
+                                                    <th className="text-center">SIDE</th>
+                                                    <th className="text-right">QTY</th>
+                                                    <th className="text-center">TYPE</th>
+                                                    <th className="text-right">PRICE</th>
+                                                    <th className="text-center">STATUS</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {history.slice(0, 6).map((order) => (
+                                                    <tr key={order.id}>
+                                                        <td style={{ fontWeight: 700, color: 'var(--text)' }}>{order.symbol}</td>
+                                                        <td className="text-center">
+                                                            <span style={{ 
+                                                                color: order.side === 'BUY' ? 'var(--primary)' : 'var(--red)', 
+                                                                fontWeight: 900,
+                                                                fontSize: '0.8rem',
+                                                                letterSpacing: '0.05em'
+                                                            }}>
+                                                                {order.side}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-right" style={{ fontWeight: 600 }}>{order.quantity}</td>
+                                                        <td className="text-center">
+                                                            <span style={{ 
+                                                                fontSize: '0.65rem', 
+                                                                fontWeight: 700, 
+                                                                color: 'var(--text-muted)',
+                                                                background: 'rgba(255,255,255,0.03)',
+                                                                padding: '2px 6px',
+                                                                borderRadius: '4px',
+                                                                border: '1px solid var(--border)'
+                                                            }}>
+                                                                {order.type}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-right price-col">₹{fmt(order.executedPrice || order.triggerPrice || 0)}</td>
+                                                        <td className="text-center">
+                                                            <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                                                                {order.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )
                                 ) : holdings.length === 0 ? (
                                     <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                                         <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📭</div>
@@ -373,7 +440,7 @@ export default function DashboardPage() {
                                                     <tr key={h.id ?? h.symbol}>
                                                         <td>
                                                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)', fontSize: '0.75rem' }}>
+                                                                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)', fontSize: '0.75rem' }}>
                                                                     {h.symbol.slice(0, 1)}
                                                                 </div>
                                                                 <div>
@@ -401,7 +468,7 @@ export default function DashboardPage() {
                                     </table>
                                 )}
                                 <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    <span>Showing {holdings.length} active positions</span>
+                                    <span>Showing {ledgerTab === 'REPORTS' ? history.length : holdings.length} active positions</span>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button className="btn" style={{ padding: '4px 8px', background: 'var(--surface)', border: '1px solid var(--border)' }}>&lt;</button>
                                         <button className="btn" style={{ padding: '4px 12px', background: 'var(--primary-dim)', color: 'var(--primary)', border: '1px solid var(--primary)' }}>1</button>

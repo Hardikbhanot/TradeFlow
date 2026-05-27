@@ -24,18 +24,21 @@ export default function MarketNews() {
 
     return (
         <div className="news-list">
-            {news.map(item => (
-                <div key={item.id} className="news-item">
-                    <div className="news-header">
-                        <span className="news-source">{item.source}</span>
-                        <span className="news-time">{item.time}</span>
+            {news.map((item, idx) => {
+                const sentiment = item.sentiment ? item.sentiment.toLowerCase() : 'neutral';
+                return (
+                    <div key={item.id || idx} className="news-item">
+                        <div className="news-header">
+                            <span className="news-source">{item.source}</span>
+                            <span className="news-time">{item.time}</span>
+                        </div>
+                        <div className="news-title">{item.title}</div>
+                        <div className={`news-sentiment ${sentiment}`}>
+                            {sentiment === 'positive' ? '▲ POSITIVE' : sentiment === 'negative' ? '▼ NEGATIVE' : '○ NEUTRAL'}
+                        </div>
                     </div>
-                    <div className="news-title">{item.title}</div>
-                    <div className={`news-sentiment ${item.sentiment}`}>
-                        {item.sentiment === 'positive' ? '▲ POSITIVE' : item.sentiment === 'negative' ? '▼ NEGATIVE' : '○ NEUTRAL'}
-                    </div>
-                </div>
-            ))}
+                );
+            })}
             <button className="btn btn-full" style={{ marginTop: '1rem', fontSize: '0.75rem', background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 VIEW ALL NEWS
             </button>
