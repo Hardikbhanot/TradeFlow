@@ -41,7 +41,7 @@ public class NewsService {
             NodeList nodeList = doc.getElementsByTagName("item");
             List<Map<String, String>> mappedNews = new ArrayList<>();
             
-            for (int i = 0; i < Math.min(nodeList.getLength(), 6); i++) {
+            for (int i = 0; i < Math.min(nodeList.getLength(), 15); i++) {
                 Element element = (Element) nodeList.item(i);
                 String rawTitle = element.getElementsByTagName("title").item(0).getTextContent();
                 
@@ -63,11 +63,14 @@ public class NewsService {
                     }
                 } catch (Exception ex) {}
 
+                String link = element.getElementsByTagName("link").item(0).getTextContent();
+
                 Map<String, String> item = new HashMap<>();
                 item.put("title", title);
                 item.put("summary", title);
                 item.put("source", source);
                 item.put("time", timeStr);
+                item.put("link", link);
                 
                 // Classify real-time sentiment
                 String lowerTitle = title.toLowerCase();
@@ -105,11 +108,12 @@ public class NewsService {
                     List<Map<String, Object>> articles = (List<Map<String, Object>>) response.getBody().get("articles");
                     if (articles != null && !articles.isEmpty()) {
                         List<Map<String, String>> mappedNews = new ArrayList<>();
-                        for (int i = 0; i < Math.min(articles.size(), 6); i++) {
+                        for (int i = 0; i < Math.min(articles.size(), 15); i++) {
                             Map<String, Object> art = articles.get(i);
                             Map<String, String> item = new HashMap<>();
                             item.put("title", (String) art.get("title"));
                             item.put("summary", (String) art.get("description"));
+                            item.put("link", (String) art.get("url"));
                             
                             Map<String, Object> sourceObj = (Map<String, Object>) art.get("source");
                             item.put("source", sourceObj != null ? (String) sourceObj.get("name") : "Global Feed");
@@ -137,7 +141,8 @@ public class NewsService {
             "summary", "Core CPI monthly increase was only 0.2%, leading to speculation that central banks may pause rate hikes sooner than anticipated.",
             "source", "TradeFlow Intelligence",
             "time", "1h ago",
-            "sentiment", "Positive"
+            "sentiment", "Positive",
+            "link", "https://tradeflow.hbhanot.tech"
         ));
         
         news.add(Map.of(
@@ -145,7 +150,8 @@ public class NewsService {
             "summary", "Leading chipmakers report record demand for AI-optimized hardware, driving tech indices to all-time highs.",
             "source", "Alpha Pulse",
             "time", "3h ago",
-            "sentiment", "Positive"
+            "sentiment", "Positive",
+            "link", "https://tradeflow.hbhanot.tech"
         ));
 
         news.add(Map.of(
@@ -153,7 +159,8 @@ public class NewsService {
             "summary", "Global energy storage levels reach 2-year highs as major exporters increase output ahead of the summer season.",
             "source", "Commodity Hub",
             "time", "5h ago",
-            "sentiment", "Neutral"
+            "sentiment", "Neutral",
+            "link", "https://tradeflow.hbhanot.tech"
         ));
 
         news.add(Map.of(
@@ -161,7 +168,8 @@ public class NewsService {
             "summary", "Quarterly reports from major retailers suggest that consumer sentiment remains strong despite higher borrowing costs.",
             "source", "Market Watch",
             "time", "8h ago",
-            "sentiment", "Positive"
+            "sentiment", "Positive",
+            "link", "https://tradeflow.hbhanot.tech"
         ));
 
         return news;
