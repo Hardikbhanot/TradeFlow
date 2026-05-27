@@ -102,7 +102,6 @@ export default function OrdersPage() {
                 });
                 setOtpCode('');
                 setOtpError('');
-                setShowOtpModal(true);
             } else {
                 setResult({ ok: false, msg: `❌ ${data?.message ?? 'Failed to place order'}` });
             }
@@ -113,7 +112,7 @@ export default function OrdersPage() {
     }
 
     async function handleOtpSubmit(e) {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!otpCode || otpCode.trim().length !== 6) {
             setOtpError('Please enter a 6-digit OTP code.');
             return;
@@ -129,7 +128,6 @@ export default function OrdersPage() {
             setResult({ ok: true, msg: `✅ Sell order placed! ID: ${res.data.id} | Status: ${res.data.status}` });
             setForm({ symbol: '', quantity: '', exchange: 'NSE', side: 'BUY', orderType: 'MARKET', pricePerUnit: '', triggerPrice: '' });
             setLivePrice(null);
-            setShowOtpModal(false);
             setPendingOrder(null);
             fetchHistory();
             fetchHoldings();
@@ -277,20 +275,86 @@ export default function OrdersPage() {
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>*Excluding brokerage and SEBI charges.</div>
                             </div>
 
-                            <button
-                                className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
-                                style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
-                                onClick={() => {
-                                    if (hasInsufficientHoldings) {
-                                        setShowInsufficientModal(true);
-                                    } else {
-                                        setShowConfirm(true);
-                                    }
-                                }}
-                                disabled={!form.symbol || !form.quantity || parseInt(form.quantity) <= 0}
-                            >
-                                REVIEW {form.side} ORDER →
-                            </button>
+                            {pendingOrder ? (
+                                <div style={{
+                                    background: 'rgba(255,75,75,0.03)',
+                                    border: '1px dashed rgba(255,75,75,0.4)',
+                                    padding: '1.25rem',
+                                    borderRadius: '12px',
+                                    marginTop: '1rem',
+                                    animation: 'fadeIn 0.3s ease'
+                                }}>
+                                    <label className="auth-label" style={{ color: 'var(--red)', fontWeight: 800, display: 'block', marginBottom: '8px', textAlign: 'center' }}>
+                                        ENTER 6-DIGIT SELL OTP
+                                    </label>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '12px', lineHeight: 1.4 }}>
+                                        An OTP has been sent to your email. Enter it below to authorize this sell order.
+                                    </p>
+                                    <input
+                                        className="form-input"
+                                        type="text"
+                                        maxLength="6"
+                                        placeholder="000000"
+                                        value={otpCode}
+                                        onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                        style={{
+                                            textAlign: 'center',
+                                            fontSize: '1.4rem',
+                                            fontWeight: 800,
+                                            letterSpacing: '0.3em',
+                                            height: '48px',
+                                            marginBottom: '8px',
+                                            color: 'var(--red)',
+                                            borderColor: 'rgba(255,75,75,0.3)',
+                                            background: 'var(--background)'
+                                        }}
+                                    />
+                                    {otpError && (
+                                        <div style={{ color: 'var(--red)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px', textAlign: 'center' }}>
+                                            ⚠️ {otpError}
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost"
+                                            style={{ flex: 1 }}
+                                            onClick={() => {
+                                                setPendingOrder(null);
+                                                setOtpCode('');
+                                                setOtpError('');
+                                                setResult(null);
+                                            }}
+                                        >
+                                            CANCEL
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-red"
+                                            style={{ flex: 2, fontWeight: 800 }}
+                                            onClick={handleOtpSubmit}
+                                            disabled={otpPlacing}
+                                        >
+                                            {otpPlacing ? 'VERIFYING...' : 'VERIFY & SELL'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
+                                    style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
+                                    onClick={() => {
+                                        if (hasInsufficientHoldings) {
+                                            setShowInsufficientModal(true);
+                                        } else {
+                                            setShowConfirm(true);
+                                        }
+                                    }}
+                                    disabled={!form.symbol || !form.quantity || parseInt(form.quantity) <= 0}
+                                >
+                                    REVIEW {form.side} ORDER →
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -397,48 +461,7 @@ export default function OrdersPage() {
                 </div>
             )}
 
-            {showOtpModal && (
-                <div className="modal-overlay" style={{ zIndex: 1100 }}>
-                    <div className="card execution-modal" style={{ maxWidth: '460px' }}>
-                        <div style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--red)', textAlign: 'center' }}>
-                            ENTER SELL OTP
-                        </div>
-                        <div style={{ padding: '0 1rem 1rem' }}>
-                            <p style={{ marginBottom: '1.25rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                                A one-time verification code was sent to your registered email. Enter the 6-digit code below to complete the sell order for <strong>{pendingOrder?.quantity} shares</strong> of <strong>{pendingOrder?.symbol}</strong>.
-                            </p>
-                            <form onSubmit={handleOtpSubmit}>
-                                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                                    <label className="auth-label">OTP Code</label>
-                                    <input
-                                        className="form-input"
-                                        type="text"
-                                        maxLength="6"
-                                        placeholder="000000"
-                                        value={otpCode}
-                                        onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                                        style={{ letterSpacing: '0.35em', textAlign: 'center', fontSize: '1.25rem', fontWeight: 700 }}
-                                        required
-                                    />
-                                </div>
-                                {otpError && (
-                                    <div style={{ color: 'var(--red)', marginBottom: '1rem', fontWeight: 600 }}>
-                                        ⚠️ {otpError}
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    <button type="button" className="btn btn-ghost btn-full" onClick={() => { setShowOtpModal(false); setPendingOrder(null); setOtpError(''); }}>
-                                        CANCEL
-                                    </button>
-                                    <button type="submit" className="btn btn-red btn-full" disabled={otpPlacing}>
-                                        {otpPlacing ? 'VERIFYING...' : 'VERIFY & SELL'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {/* Insufficient Holdings Warning Modal */}
             {showInsufficientModal && (
