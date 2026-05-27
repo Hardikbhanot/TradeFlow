@@ -29,6 +29,8 @@ export default function OrdersPage() {
     const [otpError, setOtpError] = useState('');
     const [otpPlacing, setOtpPlacing] = useState(false);
     const [pendingOrder, setPendingOrder] = useState(null);
+    const [holdings, setHoldings] = useState([]);
+    const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
     async function fetchPriceForSym(symbol) {
         if (!symbol.trim()) return;
@@ -50,9 +52,17 @@ export default function OrdersPage() {
         } catch {}
     }
 
+    async function fetchHoldings() {
+        try {
+            const r = await api.get('/api/v1/portfolio');
+            setHoldings(r.data);
+        } catch {}
+    }
+
     useEffect(() => {
         if (initialSymbol) fetchPriceForSym(initialSymbol);
         fetchHistory();
+        fetchHoldings();
     }, [initialSymbol]);
 
     async function confirmOrder() {
@@ -76,9 +86,10 @@ export default function OrdersPage() {
             setForm({ symbol: '', quantity: '', exchange: 'NSE', side: 'BUY', orderType: 'MARKET', pricePerUnit: '', triggerPrice: '' });
             setLivePrice(null);
             fetchHistory();
+            fetchHoldings();
         } catch (err) {
             const data = err.response?.data;
-            if (err.response?.status === 403 && data?.status === 'OTP_REQUIRED') {
+            if (data?.status === 'OTP_REQUIRED') {
                 setResult({ ok: true, msg: `🔐 ${data.message}` });
                 setPendingOrder({
                     symbol: form.symbol.toUpperCase(),
@@ -121,9 +132,10 @@ export default function OrdersPage() {
             setShowOtpModal(false);
             setPendingOrder(null);
             fetchHistory();
+            fetchHoldings();
         } catch (err) {
             const data = err.response?.data;
-            if (err.response?.status === 400 && data?.status === 'INVALID_OTP') {
+            if (data?.status === 'INVALID_OTP') {
                 setOtpError(data.message || 'Incorrect or expired OTP');
             } else {
                 setOtpError(data?.message ?? 'OTP verification failed.');
@@ -132,6 +144,10 @@ export default function OrdersPage() {
             setOtpPlacing(false);
         }
     }
+
+    const selectedHolding = holdings.find(h => h.symbol.toUpperCase() === form.symbol.toUpperCase());
+    const ownedQty = selectedHolding ? selectedHolding.totalQuantity : 0;
+    const hasInsufficientHoldings = form.side === 'SELL' && form.symbol && form.quantity && (parseInt(form.quantity) > ownedQty);
 
     const totalEstimate = form.pricePerUnit && form.quantity
         ? (parseFloat(form.pricePerUnit) * parseInt(form.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2 })
@@ -180,8 +196,15 @@ export default function OrdersPage() {
                                     fetchPriceForSym(sym);
                                 }} />
                                 {form.symbol && (
-                                    <div style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>
-                                        SELECTED: {form.symbol.toUpperCase()}
+                                    <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>
+                                            SELECTED: {form.symbol.toUpperCase()}
+                                        </div>
+                                        {form.side === 'SELL' && (
+                                            <div style={{ fontSize: '0.85rem', color: ownedQty > 0 ? 'var(--green)' : 'var(--text-muted)', fontWeight: 700 }}>
+                                                Available Qty: {ownedQty} shares
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -198,6 +221,11 @@ export default function OrdersPage() {
                                     <label className="auth-label">Quantity</label>
                                     <input className="form-input" type="number" min="1" placeholder="0" value={form.quantity}
                                         onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+                                    {hasInsufficientHoldings && (
+                                        <div style={{ color: 'var(--red)', fontSize: '0.78rem', fontWeight: 600, marginTop: '6px' }}>
+                                            ⚠️ Insufficient holdings. You only own {ownedQty} shares.
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="form-group">
                                     <label className="auth-label">Exchange</label>
@@ -252,8 +280,14 @@ export default function OrdersPage() {
                             <button
                                 className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
                                 style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
-                                onClick={() => setShowConfirm(true)}
-                                disabled={!form.symbol || !form.quantity}
+                                onClick={() => {
+                                    if (hasInsufficientHoldings) {
+                                        setShowInsufficientModal(true);
+                                    } else {
+                                        setShowConfirm(true);
+                                    }
+                                }}
+                                disabled={!form.symbol || !form.quantity || parseInt(form.quantity) <= 0}
                             >
                                 REVIEW {form.side} ORDER →
                             </button>
@@ -401,6 +435,27 @@ export default function OrdersPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Insufficient Holdings Warning Modal */}
+            {showInsufficientModal && (
+                <div className="modal-overlay" style={{ zIndex: 1200 }}>
+                    <div className="card execution-modal" style={{ maxWidth: '440px', border: '1px solid rgba(255,75,75,0.2)', boxShadow: '0 0 50px rgba(255,75,75,0.15)', animation: 'fadeIn 0.3s ease' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--red)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <span>⚠️ Execution Blocked</span>
+                        </div>
+                        <div style={{ padding: '0 1rem 1rem', textAlign: 'center' }}>
+                            <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)', lineHeight: 1.6, fontSize: '0.9rem' }}>
+                                You cannot execute a sell order for <strong>{form.quantity} shares</strong> of <strong>{form.symbol.toUpperCase()}</strong> because you only own <strong>{ownedQty} shares</strong> in your portfolio.
+                            </p>
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                <button type="button" className="btn btn-red btn-full" onClick={() => setShowInsufficientModal(false)} style={{ fontWeight: 800 }}>
+                                    ACKNOWLEDGE & FIX
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
