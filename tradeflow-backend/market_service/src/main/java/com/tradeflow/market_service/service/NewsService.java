@@ -5,6 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,38 +27,103 @@ public class NewsService {
     private static final String NEWS_URL = "https://newsapi.org/v2/top-headlines?category=business&country=in&apiKey=";
 
     public List<Map<String, String>> getLatestMarketNews() {
-        if (apiKey == null || apiKey.isEmpty()) {
-            log.info("News API Key missing, returning curated mock intelligence.");
-            return getMockNews();
-        }
-
         try {
-            log.info("Fetching live market news from NewsAPI...");
-            ResponseEntity<Map> response = restTemplate.getForEntity(NEWS_URL + apiKey, Map.class);
+            log.info("Fetching real-time stock market news from public Google News RSS feed...");
+            String rssUrl = "https://news.google.com/rss/search?q=stock+market+india&hl=en-IN&gl=IN&ceid=IN:en";
             
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<Map<String, Object>> articles = (List<Map<String, Object>>) response.getBody().get("articles");
-                if (articles != null && !articles.isEmpty()) {
-                    List<Map<String, String>> mappedNews = new ArrayList<>();
-                    // Map only first 5-6 articles to keep dashboard clean
-                    for (int i = 0; i < Math.min(articles.size(), 6); i++) {
-                        Map<String, Object> art = articles.get(i);
-                        Map<String, String> item = new HashMap<>();
-                        item.put("title", (String) art.get("title"));
-                        item.put("summary", (String) art.get("description"));
-                        
-                        Map<String, Object> source = (Map<String, Object>) art.get("source");
-                        item.put("source", source != null ? (String) source.get("name") : "Global Feed");
-                        
-                        item.put("time", "Just now");
-                        item.put("sentiment", i % 2 == 0 ? "Positive" : "Neutral"); // Simple mock sentiment for UI
-                        mappedNews.add(item);
-                    }
-                    return mappedNews;
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            // Secure XML parser against XXE vulnerabilities
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(new URL(rssUrl).openStream());
+            doc.getDocumentElement().normalize();
+            
+            NodeList nodeList = doc.getElementsByTagName("item");
+            List<Map<String, String>> mappedNews = new ArrayList<>();
+            
+            for (int i = 0; i < Math.min(nodeList.getLength(), 6); i++) {
+                Element element = (Element) nodeList.item(i);
+                String rawTitle = element.getElementsByTagName("title").item(0).getTextContent();
+                
+                // Google News RSS titles usually end with " - Source Name". Let's clean it up!
+                String title = rawTitle;
+                String source = "Financial Feed";
+                int dashIdx = rawTitle.lastIndexOf(" - ");
+                if (dashIdx > 0) {
+                    title = rawTitle.substring(0, dashIdx).trim();
+                    source = rawTitle.substring(dashIdx + 3).trim();
                 }
+                
+                String pubDate = element.getElementsByTagName("pubDate").item(0).getTextContent();
+                String timeStr = "Recent";
+                try {
+                    String[] parts = pubDate.split(" ");
+                    if (parts.length >= 3) {
+                        timeStr = parts[1] + " " + parts[2];
+                    }
+                } catch (Exception ex) {}
+
+                Map<String, String> item = new HashMap<>();
+                item.put("title", title);
+                item.put("summary", title);
+                item.put("source", source);
+                item.put("time", timeStr);
+                
+                // Classify real-time sentiment
+                String lowerTitle = title.toLowerCase();
+                String sentiment = "Neutral";
+                if (lowerTitle.contains("rally") || lowerTitle.contains("surge") || lowerTitle.contains("gain") || 
+                    lowerTitle.contains("rise") || lowerTitle.contains("jump") || lowerTitle.contains("bull") || 
+                    lowerTitle.contains("soar") || lowerTitle.contains("up") || lowerTitle.contains("high") ||
+                    lowerTitle.contains("green") || lowerTitle.contains("positive")) {
+                    sentiment = "Positive";
+                } else if (lowerTitle.contains("fall") || lowerTitle.contains("drop") || lowerTitle.contains("dip") || 
+                           lowerTitle.contains("plunge") || lowerTitle.contains("crash") || lowerTitle.contains("bear") || 
+                           lowerTitle.contains("down") || lowerTitle.contains("low") || lowerTitle.contains("loss") ||
+                           lowerTitle.contains("red") || lowerTitle.contains("negative")) {
+                    sentiment = "Negative";
+                }
+                
+                item.put("sentiment", sentiment);
+                mappedNews.add(item);
+            }
+            
+            if (!mappedNews.isEmpty()) {
+                return mappedNews;
             }
         } catch (Exception e) {
-            log.error("Failed to fetch live news: {}. Falling back to mock.", e.getMessage());
+            log.error("Failed to fetch live RSS news: {}. Checking NewsAPI fallback...", e.getMessage());
+        }
+        
+        // NewsAPI fallback if key is configured in the environment
+        if (apiKey != null && !apiKey.isEmpty()) {
+            try {
+                log.info("Fetching live news from NewsAPI fallback...");
+                ResponseEntity<Map> response = restTemplate.getForEntity(NEWS_URL + apiKey, Map.class);
+                
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    List<Map<String, Object>> articles = (List<Map<String, Object>>) response.getBody().get("articles");
+                    if (articles != null && !articles.isEmpty()) {
+                        List<Map<String, String>> mappedNews = new ArrayList<>();
+                        for (int i = 0; i < Math.min(articles.size(), 6); i++) {
+                            Map<String, Object> art = articles.get(i);
+                            Map<String, String> item = new HashMap<>();
+                            item.put("title", (String) art.get("title"));
+                            item.put("summary", (String) art.get("description"));
+                            
+                            Map<String, Object> sourceObj = (Map<String, Object>) art.get("source");
+                            item.put("source", sourceObj != null ? (String) sourceObj.get("name") : "Global Feed");
+                            
+                            item.put("time", "Just now");
+                            item.put("sentiment", i % 2 == 0 ? "Positive" : "Neutral");
+                            mappedNews.add(item);
+                        }
+                        return mappedNews;
+                    }
+                }
+            } catch (Exception e) {
+                log.error("NewsAPI fallback failed: {}", e.getMessage());
+            }
         }
         
         return getMockNews();
