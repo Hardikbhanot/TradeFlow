@@ -318,7 +318,7 @@ export default function DashboardPage() {
                                 <div className="value">{holdings.length}</div>
                             </div>
                         </div>
-                        <EquityChart />
+                        <EquityChart currentValue={totalCurrent + (wallet?.balance ?? 0)} />
                     </div>
 
                     <div className="dashboard-grid">
