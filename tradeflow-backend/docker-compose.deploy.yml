@@ -86,7 +86,7 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_DATA_REDIS_HOST=redis
       - MARKET_SERVICE_URL=http://market-service:8085
-      - GEMINI_API_KEY=${GEMINI_API_KEY:}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: always
 
   order-service:
