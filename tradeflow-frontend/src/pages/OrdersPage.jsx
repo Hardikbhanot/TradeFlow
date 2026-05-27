@@ -67,10 +67,10 @@ export default function OrdersPage() {
 
     async function confirmOrder() {
         setPlacing(true);
+        const derivedTriggerPrice = form.orderType === 'MARKET'
+            ? null
+            : (form.triggerPrice ? parseFloat(form.triggerPrice) : (form.pricePerUnit ? parseFloat(form.pricePerUnit) : null));
         try {
-            const derivedTriggerPrice = form.orderType === 'MARKET'
-                ? null
-                : (form.triggerPrice ? parseFloat(form.triggerPrice) : (form.pricePerUnit ? parseFloat(form.pricePerUnit) : null));
 
             const body = {
                 symbol: form.symbol.toUpperCase(),

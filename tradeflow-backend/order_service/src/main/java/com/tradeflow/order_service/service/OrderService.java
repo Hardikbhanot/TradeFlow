@@ -51,8 +51,8 @@ public class OrderService {
         if (request.getSide() == OrderSide.SELL) {
             // Check if OTP is provided
             if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
-                log.info("🔐 Sell Order requires OTP. Generating OTP for User {}", request.getUserId());
-                authClient.generateOtpForSell(request.getUserId());
+                log.info("🔐 Sell Order requires OTP. Generating OTP for User {} ({} shares of {})", request.getUserId(), request.getQuantity(), request.getSymbol());
+                authClient.generateOtpForSell(request.getUserId(), request.getSymbol(), request.getQuantity().intValue());
                 throw new RuntimeException("OTP_REQUIRED");
             }
 

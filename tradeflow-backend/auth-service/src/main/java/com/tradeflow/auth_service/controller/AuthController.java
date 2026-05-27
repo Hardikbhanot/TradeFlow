@@ -209,7 +209,9 @@ public class AuthController {
 
     @PostMapping("/otp/generate-for-sell")
     @Transactional
-    public ResponseEntity<Void> generateOtpForSell(@RequestParam Long userId) {
+    public ResponseEntity<Void> generateOtpForSell(@RequestParam Long userId,
+                                                    @RequestParam(required = false) String symbol,
+                                                    @RequestParam(required = false) Integer quantity) {
         Optional<AppUser> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -230,9 +232,9 @@ public class AuthController {
         otpRepository.save(otpEntity);
 
         // Publish event to Kafka to simulate/send the email
-        OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode);
+        OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode, "SELL", symbol, quantity);
         kafkaTemplate.send("otp-topic", event);
-        System.out.println("📧 [SELL OTP] Generated OTP for User ID " + userId + " (" + username + "): " + otpCode);
+        System.out.println("📧 [SELL OTP] Generated OTP for User ID " + userId + " (" + username + ") for " + quantity + " shares of " + symbol + ": " + otpCode);
 
         return ResponseEntity.ok().build();
     }

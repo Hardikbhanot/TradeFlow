@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface AuthClient {
 
     @PostMapping("/auth/otp/generate-for-sell")
-    void generateOtpForSell(@RequestParam("userId") Long userId);
+    void generateOtpForSell(@RequestParam("userId") Long userId,
+                            @RequestParam("symbol") String symbol,
+                            @RequestParam("quantity") Integer quantity);
 
     @PostMapping("/auth/otp/verify-for-sell")
     boolean verifyOtpForSell(@RequestParam("userId") Long userId, @RequestParam("otp") String otp);
