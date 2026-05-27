@@ -24,6 +24,11 @@ export default function OrdersPage() {
     const [placing, setPlacing] = useState(false);
     const [result, setResult] = useState(null);
     const [history, setHistory] = useState([]);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [otpError, setOtpError] = useState('');
+    const [otpPlacing, setOtpPlacing] = useState(false);
+    const [pendingOrder, setPendingOrder] = useState(null);
 
     async function fetchPriceForSym(symbol) {
         if (!symbol.trim()) return;
@@ -72,10 +77,59 @@ export default function OrdersPage() {
             setLivePrice(null);
             fetchHistory();
         } catch (err) {
-            setResult({ ok: false, msg: `❌ ${err.response?.data?.message ?? 'Failed to place order'}` });
+            const data = err.response?.data;
+            if (err.response?.status === 403 && data?.status === 'OTP_REQUIRED') {
+                setResult({ ok: true, msg: `🔐 ${data.message}` });
+                setPendingOrder({
+                    symbol: form.symbol.toUpperCase(),
+                    quantity: parseInt(form.quantity),
+                    exchange: form.exchange,
+                    side: form.side,
+                    orderType: form.orderType,
+                    pricePerUnit: form.pricePerUnit ? parseFloat(form.pricePerUnit) : null,
+                    triggerPrice: derivedTriggerPrice,
+                });
+                setOtpCode('');
+                setOtpError('');
+                setShowOtpModal(true);
+            } else {
+                setResult({ ok: false, msg: `❌ ${data?.message ?? 'Failed to place order'}` });
+            }
         } finally {
             setPlacing(false);
             setShowConfirm(false);
+        }
+    }
+
+    async function handleOtpSubmit(e) {
+        e.preventDefault();
+        if (!otpCode || otpCode.trim().length !== 6) {
+            setOtpError('Please enter a 6-digit OTP code.');
+            return;
+        }
+
+        setOtpPlacing(true);
+        setOtpError('');
+        try {
+            const res = await api.post('/api/v1/orders', {
+                ...pendingOrder,
+                otp: otpCode,
+            });
+            setResult({ ok: true, msg: `✅ Sell order placed! ID: ${res.data.id} | Status: ${res.data.status}` });
+            setForm({ symbol: '', quantity: '', exchange: 'NSE', side: 'BUY', orderType: 'MARKET', pricePerUnit: '', triggerPrice: '' });
+            setLivePrice(null);
+            setShowOtpModal(false);
+            setPendingOrder(null);
+            fetchHistory();
+        } catch (err) {
+            const data = err.response?.data;
+            if (err.response?.status === 400 && data?.status === 'INVALID_OTP') {
+                setOtpError(data.message || 'Incorrect or expired OTP');
+            } else {
+                setOtpError(data?.message ?? 'OTP verification failed.');
+            }
+        } finally {
+            setOtpPlacing(false);
         }
     }
 
@@ -304,6 +358,49 @@ export default function OrdersPage() {
                                 onClick={confirmOrder} disabled={placing}>
                                 {placing ? 'EXECUTING...' : 'CONFIRM ORDER'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showOtpModal && (
+                <div className="modal-overlay" style={{ zIndex: 1100 }}>
+                    <div className="card execution-modal" style={{ maxWidth: '460px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--red)', textAlign: 'center' }}>
+                            ENTER SELL OTP
+                        </div>
+                        <div style={{ padding: '0 1rem 1rem' }}>
+                            <p style={{ marginBottom: '1.25rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                                A one-time verification code was sent to your registered email. Enter the 6-digit code below to complete the sell order for <strong>{pendingOrder?.quantity} shares</strong> of <strong>{pendingOrder?.symbol}</strong>.
+                            </p>
+                            <form onSubmit={handleOtpSubmit}>
+                                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <label className="auth-label">OTP Code</label>
+                                    <input
+                                        className="form-input"
+                                        type="text"
+                                        maxLength="6"
+                                        placeholder="000000"
+                                        value={otpCode}
+                                        onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                        style={{ letterSpacing: '0.35em', textAlign: 'center', fontSize: '1.25rem', fontWeight: 700 }}
+                                        required
+                                    />
+                                </div>
+                                {otpError && (
+                                    <div style={{ color: 'var(--red)', marginBottom: '1rem', fontWeight: 600 }}>
+                                        ⚠️ {otpError}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button type="button" className="btn btn-ghost btn-full" onClick={() => { setShowOtpModal(false); setPendingOrder(null); setOtpError(''); }}>
+                                        CANCEL
+                                    </button>
+                                    <button type="submit" className="btn btn-red btn-full" disabled={otpPlacing}>
+                                        {otpPlacing ? 'VERIFYING...' : 'VERIFY & SELL'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
