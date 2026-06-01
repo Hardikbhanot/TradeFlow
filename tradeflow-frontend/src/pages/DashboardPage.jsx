@@ -31,6 +31,24 @@ export default function DashboardPage() {
     const [brokerStatus, setBrokerStatus] = useState({ connected: false, broker: 'None' });
     const [loadingBroker, setLoadingBroker] = useState(true);
     const [toasts, setToasts] = useState([]);
+    const [inputToken, setInputToken] = useState('');
+    const [savingToken, setSavingToken] = useState(false);
+
+    async function saveMorningToken(e) {
+        e.preventDefault();
+        if (!inputToken.trim()) return;
+        setSavingToken(true);
+        try {
+            await api.post('/auth/indmoney/token', { token: inputToken });
+            addToast('Morning token successfully configured!');
+            setInputToken('');
+            fetchBrokerStatus();
+        } catch {
+            addToast('Failed to save bearer token', 'error');
+        } finally {
+            setSavingToken(false);
+        }
+    }
 
 
     const [side, setSide] = useState('BUY');
@@ -82,7 +100,7 @@ export default function DashboardPage() {
 
     const fetchBrokerStatus = useCallback(async () => {
         try {
-            const res = await api.get('/auth/upstox/status');
+            const res = await api.get('/auth/indmoney/status');
             setBrokerStatus(res.data);
         } catch {
             // ignore
@@ -146,14 +164,7 @@ export default function DashboardPage() {
     const pnlPct = totalInvested ? (pnl / totalInvested) * 100 : 0;
 
     async function connectBroker() {
-        try {
-            const res = await api.get('/auth/upstox/login-url');
-            if (res.data?.url) {
-                window.location.href = res.data.url;
-            }
-        } catch (err) {
-            addToast('Failed to get connection URL', 'error');
-        }
+        window.open('https://www.indstocks.com/app/api-trading', '_blank');
     }
 
     async function placeQuickOrder(e) {
@@ -463,31 +474,99 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="dashboard-right">
-                            {!brokerStatus.connected && (
-                                <div className="card" style={{ alignSelf: 'start' }}>
-                                    <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>Broker Connection</span>
-                                        {loadingBroker ? null : (
-                                            <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
-                                                DISCONNECTED
-                                            </span>
-                                        )}
-                                    </div>
-                                    
-                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                                        Connect your Upstox account to enable live market data and real-time trading.
-                                    </div>
-
-                                    <button 
-                                        type="button" 
-                                        className="btn btn-primary btn-full"
-                                        style={{ background: 'var(--primary)', color: '#000' }}
-                                        onClick={connectBroker}
-                                    >
-                                        Connect Upstox Broker
-                                    </button>
+                            <div className="card" style={{ alignSelf: 'start', border: '1px solid var(--border)', background: 'var(--surface-card)' }}>
+                                <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>Broker Integration</span>
+                                    {loadingBroker ? (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Checking...</span>
+                                    ) : brokerStatus.connected ? (
+                                        <span className="badge badge-green" style={{ fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block', boxShadow: '0 0 8px #10B981', animation: 'pulse 2s infinite' }}></span>
+                                            CONNECTED
+                                        </span>
+                                    ) : (
+                                        <span className="badge badge-red" style={{ fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(244, 63, 94, 0.1)', color: '#F43F5E', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                                            DISCONNECTED
+                                        </span>
+                                    )}
                                 </div>
-                            )}
+                                
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', marginBottom: '1rem', lineHeight: '1.4' }}>
+                                    {brokerStatus.connected ? (
+                                        <>
+                                            TradeFlow is connected to <strong>INDstocks</strong>. Your requests are routed securely via whitelisted server IP: <code style={{ background: 'var(--surface)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--primary)' }}>139.59.25.118</code>.
+                                        </>
+                                    ) : (
+                                        <>
+                                            No active morning session found. To place live algo trades today, generate a Bearer Token in your INDmoney console and whitelist your instance IP: <code style={{ background: 'var(--surface)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--primary)' }}>139.59.25.118</code>.
+                                        </>
+                                    )}
+                                </div>
+
+                                <form onSubmit={saveMorningToken} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <div style={{ position: 'relative' }}>
+                                        <input 
+                                            type="password" 
+                                            placeholder="Paste Daily Bearer Token..." 
+                                            value={inputToken}
+                                            onChange={e => setInputToken(e.target.value)}
+                                            style={{ 
+                                                width: '100%', 
+                                                background: 'var(--surface)', 
+                                                border: '1px solid var(--border)', 
+                                                borderRadius: '6px', 
+                                                padding: '10px 12px', 
+                                                fontSize: '0.8rem',
+                                                color: 'var(--text-1)',
+                                                outline: 'none',
+                                                transition: 'border-color 0.2s'
+                                            }}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            type="button" 
+                                            className="btn"
+                                            style={{ 
+                                                flex: 1,
+                                                background: 'var(--surface)', 
+                                                color: 'var(--text-2)',
+                                                border: '1px solid var(--border)',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '500',
+                                                padding: '10px 0',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={connectBroker}
+                                        >
+                                            Get Token
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className="btn btn-primary"
+                                            disabled={savingToken || !inputToken.trim()}
+                                            style={{ 
+                                                flex: 1.5,
+                                                background: 'var(--primary)', 
+                                                color: '#000',
+                                                border: 'none',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '600',
+                                                padding: '10px 0',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                opacity: !inputToken.trim() ? 0.6 : 1
+                                            }}
+                                        >
+                                            {savingToken ? 'Saving...' : 'Activate Session'}
+                                        </button>
+                                    </div>
+                                </form>
+                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>
+                                    💡 Token is valid until 6:00 AM IST next morning per SEBI rules.
+                                </div>
+                            </div>
 
                             <div className="card" style={{ alignSelf: 'start' }}>
                                 <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

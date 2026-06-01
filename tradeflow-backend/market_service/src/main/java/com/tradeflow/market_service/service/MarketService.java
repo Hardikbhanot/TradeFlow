@@ -25,8 +25,8 @@ import java.util.Set;
 @Slf4j
 public class MarketService {
 
-    @Value("${upstox.access.token}")
-    private String accessToken;
+    @Value("${indmoney.api.secret:}")
+    private String apiSecret;
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -43,26 +43,24 @@ public class MarketService {
             LocalDate.of(2026, 3, 31) // Mahavir Jayanti
     );
 
-    private final UpstoxInstrumentService upstoxInstrumentService;
+    private final IndMoneyInstrumentService indMoneyInstrumentService;
 
-    public MarketService(RedisTemplate<String, Object> redisTemplate, UpstoxInstrumentService upstoxInstrumentService) {
+    public MarketService(RedisTemplate<String, Object> redisTemplate, IndMoneyInstrumentService indMoneyInstrumentService) {
         this.redisTemplate = redisTemplate;
-        this.upstoxInstrumentService = upstoxInstrumentService;
+        this.indMoneyInstrumentService = indMoneyInstrumentService;
     }
 
     /**
      * Main entry point for fetching prices.
-     * Logic: Redis Cache -> Upstox API -> Mock Fallback
+     * Logic: Redis Cache -> INDstocks API -> Mock Fallback
      */
     private String resolveInstrumentKey(String symbol) {
-        // If it already looks like a valid Upstox key with a pipe or colon, return it
-        // as-is
-        if (symbol.contains("|") || symbol.contains(":")) {
+        if (symbol.contains("|") || symbol.contains(":") || symbol.contains("_")) {
             return symbol;
         }
 
         // Query the Redis Hash populated during application startup
-        Object cachedKey = redisTemplate.opsForHash().get(UpstoxInstrumentService.REDIS_HASH_KEY, symbol.toUpperCase());
+        Object cachedKey = redisTemplate.opsForHash().get(IndMoneyInstrumentService.REDIS_HASH_KEY, symbol.toUpperCase());
 
         if (cachedKey != null) {
             log.debug("Found {} dynamically mapped to {}", symbol, cachedKey);
@@ -70,7 +68,7 @@ public class MarketService {
         }
 
         log.warn("Symbol {} not found in Redis mapping. Falling back to generic structure.", symbol);
-        return "NSE_EQ|" + symbol.toUpperCase(); // Fallback structure
+        return "NSE_" + symbol.toUpperCase(); // Fallback structure
     }
 
     public BigDecimal getLivePrice(String symbol) {
@@ -83,26 +81,29 @@ public class MarketService {
             return new BigDecimal(cachedValue.toString());
         }
 
-        // 2. Try fetching from Upstox
+        // Standard scrip code format for INDstocks, e.g. NSE_3045 or NSE_RELIANCE
+        String scripCode = instrumentKey.contains("|") ? "NSE_" + symbol.toUpperCase() : instrumentKey;
+        if (scripCode.contains("NSE_EQ|")) {
+            scripCode = scripCode.replace("NSE_EQ|", "NSE_");
+        }
+
+        // 2. Try fetching from INDstocks
         try {
-            // Encode the newly mapped instrumentKey (handles the | character properly)
-            String encodedSymbol = java.net.URLEncoder.encode(instrumentKey,
+            String encodedSymbol = java.net.URLEncoder.encode(scripCode,
                     java.nio.charset.StandardCharsets.UTF_8.toString());
             java.net.URI uri = java.net.URI
-                    .create("https://api.upstox.com/v2/market-quote/quotes?instrument_key=" + encodedSymbol);
+                    .create("https://api.indstocks.com/market/quotes/ltp?scrip-codes=" + encodedSymbol);
 
             HttpHeaders headers = new HttpHeaders();
             
             // Check Redis first for a fresh token
-            String activeToken = (String) redisTemplate.opsForValue().get("upstox:access_token");
-            if (activeToken == null) {
-                log.debug("No Redis token found, falling back to ENV token.");
-                activeToken = accessToken;
+            String activeToken = (String) redisTemplate.opsForValue().get("indmoney:access_token");
+            if (activeToken == null || activeToken.isBlank()) {
+                activeToken = apiSecret;
             }
 
             headers.set("Authorization", "Bearer " + activeToken);
             headers.set("Accept", "application/json");
-            headers.set("Api-Version", "2.0");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -112,20 +113,25 @@ public class MarketService {
                 JsonNode rootNode = mapper.readTree(response.getBody());
                 JsonNode data = rootNode.get("data");
 
-                // Navigate to the first instrument in the response
-                if (data != null && data.fields().hasNext()) {
-                    JsonNode stockData = data.fields().next().getValue();
-                    BigDecimal price = stockData.get("last_price").decimalValue();
+                if (data != null) {
+                    JsonNode stockData = data.get(scripCode);
+                    if (stockData == null && data.fields().hasNext()) {
+                        stockData = data.fields().next().getValue();
+                    }
 
-                    // Store in Redis for 5 seconds
-                    redisTemplate.opsForValue().set(cacheKey, price.toString(), Duration.ofSeconds(5));
+                    if (stockData != null && stockData.has("ltp")) {
+                        BigDecimal price = stockData.get("ltp").decimalValue();
 
-                    log.info("🎯 Upstox Live Price for {}: ₹{}", symbol, price);
-                    return price;
+                        // Store in Redis for 5 seconds
+                        redisTemplate.opsForValue().set(cacheKey, price.toString(), Duration.ofSeconds(5));
+
+                        log.info("🎯 INDstocks Live Price for {}: ₹{}", symbol, price);
+                        return price;
+                    }
                 }
             }
         } catch (Exception e) {
-            log.error("⚠️ Upstox API failed or unauthorized. Using Mock logic. Error: {}", e.getMessage());
+            log.error("⚠️ INDstocks API failed or unauthorized. Using Mock logic. Error: {}", e.getMessage());
         }
 
         // 3. Fallback to Simulated Mock Price
@@ -143,9 +149,11 @@ public class MarketService {
         // Map symbols to instrument keys
         java.util.List<String> instrumentKeys = symbols.stream()
                 .map(this::resolveInstrumentKey)
+                .map(k -> k.contains("NSE_EQ|") ? k.replace("NSE_EQ|", "NSE_") : k)
+                .map(k -> k.contains("_") ? k : "NSE_" + k.toUpperCase())
                 .toList();
 
-        // Join keys with commas for the Upstox API
+        // Join keys with commas for the INDstocks API
         String joinedKeys = String.join(",", instrumentKeys);
 
         try {
@@ -153,19 +161,18 @@ public class MarketService {
             String encodedKeys = java.net.URLEncoder.encode(joinedKeys,
                     java.nio.charset.StandardCharsets.UTF_8.toString());
             java.net.URI uri = java.net.URI
-                    .create("https://api.upstox.com/v2/market-quote/quotes?instrument_key=" + encodedKeys);
+                    .create("https://api.indstocks.com/market/quotes/ltp?scrip-codes=" + encodedKeys);
 
             HttpHeaders headers = new HttpHeaders();
             
             // Check Redis first for a fresh token
-            String activeToken = (String) redisTemplate.opsForValue().get("upstox:access_token");
-            if (activeToken == null) {
-                activeToken = accessToken;
+            String activeToken = (String) redisTemplate.opsForValue().get("indmoney:access_token");
+            if (activeToken == null || activeToken.isBlank()) {
+                activeToken = apiSecret;
             }
 
             headers.set("Authorization", "Bearer " + activeToken);
             headers.set("Accept", "application/json");
-            headers.set("Api-Version", "2.0");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -176,24 +183,27 @@ public class MarketService {
                 JsonNode data = rootNode.get("data");
 
                 if (data != null) {
-                    // Iterate over all instruments returned
                     java.util.Iterator<java.util.Map.Entry<String, JsonNode>> fields = data.fields();
                     while (fields.hasNext()) {
                         java.util.Map.Entry<String, JsonNode> field = fields.next();
+                        String scripKey = field.getKey(); // e.g. NSE_RELIANCE
                         JsonNode stockData = field.getValue();
-                        String mappedSymbol = stockData.get("symbol").asText();
-                        BigDecimal price = stockData.get("last_price").decimalValue();
+                        
+                        if (stockData != null && stockData.has("ltp")) {
+                            BigDecimal price = stockData.get("ltp").decimalValue();
+                            String mappedSymbol = scripKey.replace("NSE_", "");
+                            
+                            results.put(mappedSymbol, price);
 
-                        results.put(mappedSymbol, price);
-
-                        // Also update the individual cache so regular REST calls benefit!
-                        String cacheKey = CACHE_KEY_PREFIX + mappedSymbol.toUpperCase();
-                        redisTemplate.opsForValue().set(cacheKey, price.toString(), Duration.ofSeconds(5));
+                            // Update cache
+                            String cacheKey = CACHE_KEY_PREFIX + mappedSymbol.toUpperCase();
+                            redisTemplate.opsForValue().set(cacheKey, price.toString(), Duration.ofSeconds(5));
+                        }
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("⚠️ Upstox Batch API failed. Error: {}", e.getMessage());
+            log.error("⚠️ INDstocks Batch API failed. Error: {}", e.getMessage());
             // Fallback to mock prices for the batch safely
             for (String symbol : symbols) {
                 results.put(symbol, getMockPrice(symbol));
