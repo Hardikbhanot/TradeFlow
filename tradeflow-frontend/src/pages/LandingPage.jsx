@@ -9,7 +9,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                     <Link to="/login" className="btn btn-ghost" style={{ marginRight: '1rem' }}>Sign In</Link>
-                    <Link to="/register" className="btn btn-primary" style={{ background: 'linear-gradient(90deg, #00FFD1 0%, #00BFFF 100%)', color: '#000', fontWeight: 800 }}>Get Started</Link>
+                    <Link to="/register" className="btn btn-primary" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #3B82F6 100%)', color: '#fff', fontWeight: 800 }}>Get Started</Link>
                 </div>
             </nav>
 
@@ -23,7 +23,7 @@ export default function LandingPage() {
                         Experience lightning-fast execution, AI-driven portfolio insights, and a professional-grade trade desk built for modern traders.
                     </p>
                     <div className="landing-hero-actions">
-                        <Link to="/register" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1rem', background: 'linear-gradient(90deg, #00FFD1 0%, #00BFFF 100%)', color: '#000', fontWeight: 800 }}>
+                        <Link to="/register" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1rem', background: 'linear-gradient(135deg, var(--primary) 0%, #3B82F6 100%)', color: '#fff', fontWeight: 800 }}>
                             Start Trading Now
                         </Link>
                     </div>

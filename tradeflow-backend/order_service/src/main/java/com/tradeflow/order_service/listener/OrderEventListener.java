@@ -31,19 +31,8 @@ public class OrderEventListener {
 
         @KafkaListener(topics = "funds-reserved-topic", groupId = "order-group")
         public void handleFundsReserved(FundsReservedEvent event) {
-                log.info("✅ Wallet approved funds for Order ID: {}", event.getOrderId());
-
-                // Fetch the actual order details to check type
-                orderRepository.findById(event.getOrderId()).ifPresent(order -> {
-                        // 1. Only MARKET orders complete immediately.
-                        // LIMIT/STOP_LOSS orders stay PENDING until the PriceMonitor triggers them.
-                        if (order.getType() == com.tradeflow.order_service.enums.OrderType.MARKET) {
-                                orderService.completeOrder(order.getId(), order.getExecutedPrice());
-                        } else {
-                                log.info("⏳ Order ID: {} is {} - Reserving funds/holdings and waiting for Price Trigger.",
-                                                order.getId(), order.getType());
-                        }
-                });
+                log.info("✅ Wallet approved funds for Order ID: {}. Submitting to Matching Engine.", event.getOrderId());
+                orderService.processOrderMatching(event.getOrderId());
         }
 
         @KafkaListener(topics = "funds-rejected-topic", groupId = "order-group")

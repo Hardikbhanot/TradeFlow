@@ -2,36 +2,36 @@
 
 /* ── TradeFlow Design System ── */
 :root {
-  --primary: #00FFD1;
-  --primary-dim: rgba(0, 255, 209, 0.1);
-  --primary-hover: #00e6bc;
+  --primary: #10B981; /* Sophisticated Emerald Teal */
+  --primary-dim: rgba(16, 185, 129, 0.08);
+  --primary-hover: #059669;
   
-  --bg: #06080c;
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-opaque: #0D1219;
-  --surface-hover: rgba(255, 255, 255, 0.08);
+  --bg: #0b0f17; /* Deep Slate Background */
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-opaque: #0f172a;
+  --surface-hover: rgba(255, 255, 255, 0.06);
   
-  --border: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(0, 255, 209, 0.4);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-focus: rgba(16, 185, 129, 0.3);
 
-  --green: #00FFD1;
-  --green-dim: rgba(0, 255, 209, 0.1);
-  --red: #FF4D4D;
-  --red-dim: rgba(255, 77, 77, 0.1);
-  --blue: #3b82f6;
-  --blue-dim: rgba(59, 130, 246, 0.1);
-  --gold: #FFB31A;
-  --gold-dim: rgba(255, 179, 26, 0.1);
+  --green: #10B981;
+  --green-dim: rgba(16, 185, 129, 0.08);
+  --red: #F43F5E; /* Sophisticated Rose Red */
+  --red-dim: rgba(244, 63, 94, 0.08);
+  --blue: #3B82F6;
+  --blue-dim: rgba(59, 130, 246, 0.08);
+  --gold: #F59E0B; /* Amber Yellow */
+  --gold-dim: rgba(245, 158, 11, 0.08);
 
-  --text: #FFFFFF;
-  --text-2: #A3ABB2;
-  --text-muted: #626D7A;
+  --text: #F8FAFC;
+  --text-2: #94A3B8;
+  --text-muted: #64748B;
 
   --radius: 8px;
   --radius-lg: 12px;
-  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   
-  --glass: blur(12px);
+  --glass: blur(16px);
 }
 
 /* ── Light Mode Tokens ── */
@@ -132,6 +132,25 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
+  transition: transform 0.3s var(--transition), box-shadow 0.3s var(--transition), border-color 0.3s var(--transition);
+  animation: fadeInUp 0.4s var(--transition) both;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Badge ── */
@@ -341,9 +360,9 @@ select {
 
 .status-successful, .status-completed { 
     color: var(--primary); 
-    background: rgba(0, 255, 209, 0.08); 
-    border-color: rgba(0, 255, 209, 0.15);
-    box-shadow: 0 0 12px rgba(0, 255, 209, 0.1);
+    background: var(--primary-dim); 
+    border-color: rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.06);
 }
 
 .status-failed, .status-rejected { 

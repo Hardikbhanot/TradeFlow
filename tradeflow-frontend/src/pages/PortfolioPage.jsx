@@ -57,7 +57,7 @@ export default function PortfolioPage() {
         })).sort((a, b) => b.value - a.value);
     }, [holdings, marketData, prices]);
 
-    const COLORS = ['#00FFD1', '#00BFFF', '#7000FF', '#FF00A8', '#FFD600', '#FF4D4D'];
+    const COLORS = ['#10B981', '#3B82F6', '#6366F1', '#EC4899', '#F59E0B', '#F43F5E'];
 
     const fmt = (n) => Number(n ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -72,7 +72,7 @@ export default function PortfolioPage() {
 
             <div className="dashboard-grid">
                 <div className="dashboard-left">
-                    <div className="hero-card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(0,255,209,0.05) 0%, rgba(0,191,255,0.05) 100%)' }}>
+                    <div className="hero-card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(59,130,246,0.05) 100%)' }}>
                         <div className="hero-stats-grid">
                             <div className="hero-stat-item">
                                 <div className="label">TOTAL INVESTED</div>

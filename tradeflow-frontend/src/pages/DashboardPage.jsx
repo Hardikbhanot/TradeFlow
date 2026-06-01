@@ -39,7 +39,6 @@ export default function DashboardPage() {
     const [showTradeDesk, setShowTradeDesk] = useState(false);
     const { marketData, orderUpdates } = useWebSocket(user?.userId);
     const [chartData, setChartData] = useState({});
-    const [ledgerTab, setLedgerTab] = useState('REAL-TIME');
     const [history, setHistory] = useState([]);
     const [loadingReport, setLoadingReport] = useState(false);
     const [aiReport, setAiReport] = useState(null);
@@ -282,7 +281,64 @@ export default function DashboardPage() {
 
             {showTradeDesk ? (
                 <div className="trade-desk-container" style={{ animation: 'fadeIn 0.5s ease' }}>
-                    <TradeDesk symbol={holdings[0]?.symbol || 'RELIANCE'} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+                        <div className="card">
+                            <TradeDesk symbol={orderForm.symbol || holdings[0]?.symbol || 'RELIANCE'} />
+                        </div>
+                        <div className="card">
+                            <div style={{ fontWeight: 800, marginBottom: '1.5rem', fontSize: '1.1rem', letterSpacing: '-0.02em', color: 'var(--text)' }}>Order Execution</div>
+                            <form className="order-panel" onSubmit={placeQuickOrder}>
+                                <div className="tab-row" style={{ marginBottom: '1.25rem' }}>
+                                    <button type="button" className={`order-tab buy ${side === 'BUY' ? 'active' : ''}`} onClick={() => setSide('BUY')}>BUY</button>
+                                    <button type="button" className={`order-tab sell ${side === 'SELL' ? 'active' : ''}`} onClick={() => setSide('SELL')}>SELL</button>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <label>Symbol</label>
+                                    <input className="form-input" placeholder="e.g. RELIANCE" value={orderForm.symbol}
+                                        onChange={e => setOrderForm(f => ({ ...f, symbol: e.target.value }))} required />
+                                </div>
+                                <div className="form-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label>Qty</label>
+                                        <input className="form-input" type="number" min="1" placeholder="1" value={orderForm.quantity}
+                                            onChange={e => setOrderForm(f => ({ ...f, quantity: e.target.value }))} required />
+                                    </div>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label>Exchange</label>
+                                        <select className="form-input" value={orderForm.exchange}
+                                            onChange={e => setOrderForm(f => ({ ...f, exchange: e.target.value }))}>
+                                            <option>NSE</option>
+                                            <option>BSE</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <label>Order Type</label>
+                                    <select className="form-input" value={orderForm.orderType}
+                                        onChange={e => setOrderForm(f => ({ ...f, orderType: e.target.value }))}>
+                                        <option value="MARKET">Market</option>
+                                        <option value="LIMIT">Limit</option>
+                                        <option value="STOP_LOSS">Stop Loss</option>
+                                    </select>
+                                </div>
+                                {orderForm.orderType !== 'MARKET' && (
+                                    <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                                        <label>Price per Unit (₹)</label>
+                                        <input className="form-input" type="number" step="0.01" placeholder="0.00" value={orderForm.pricePerUnit}
+                                            onChange={e => setOrderForm(f => ({ ...f, pricePerUnit: e.target.value }))} />
+                                    </div>
+                                )}
+                                <button
+                                    type="submit"
+                                    className={`btn btn-full ${side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
+                                    disabled={placing}
+                                    style={{ marginTop: '1.25rem' }}
+                                >
+                                    {placing ? 'Placing…' : `Place ${side} Order`}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <>
@@ -327,27 +383,11 @@ export default function DashboardPage() {
                             <div className="card" style={{ padding: 0 }}>
                                 <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
                                     <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', color: 'var(--text)' }}>Activity Ledger</span>
-                                        <div className="tab-row" style={{ padding: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                                            <button 
-                                                className="btn" 
-                                                style={{ fontSize: '0.65rem', padding: '6px 16px', background: ledgerTab === 'REAL-TIME' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REAL-TIME' ? 'var(--primary)' : 'var(--text-muted)', border: ledgerTab === 'REAL-TIME' ? '1px solid var(--primary-dim)' : '1px solid transparent' }}
-                                                onClick={() => setLedgerTab('REAL-TIME')}
-                                            >
-                                                REAL-TIME
-                                            </button>
-                                            <button 
-                                                className="btn" 
-                                                style={{ fontSize: '0.65rem', padding: '6px 16px', background: ledgerTab === 'REPORTS' ? 'var(--primary-dim)' : 'transparent', color: ledgerTab === 'REPORTS' ? 'var(--primary)' : 'var(--text-muted)', border: ledgerTab === 'REPORTS' ? '1px solid var(--primary-dim)' : '1px solid transparent' }}
-                                                onClick={() => setLedgerTab('REPORTS')}
-                                            >
-                                                REPORTS
-                                            </button>
-                                        </div>
+                                        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', color: 'var(--text)' }}>Transaction History Ledger</span>
                                     </div>
                                     <button 
                                         className="btn btn-primary" 
-                                        style={{ fontSize: '0.75rem', padding: '8px 16px', fontWeight: 800, background: 'linear-gradient(90deg, #00FFD1 0%, #00BFFF 100%)', color: '#000', boxShadow: '0 0 20px rgba(0,255,209,0.3)' }}
+                                        style={{ fontSize: '0.75rem', padding: '8px 16px', fontWeight: 800, background: 'var(--blue-dim)', color: 'var(--blue)', border: '1px solid rgba(59, 130, 246, 0.2)', boxShadow: '0 0 12px rgba(59, 130, 246, 0.06)' }}
                                         onClick={fetchAiReport}
                                     >
                                         ✨ AI PORTFOLIO INSIGHTS
@@ -355,120 +395,64 @@ export default function DashboardPage() {
                                 </div>
                                 {loadingHoldings ? (
                                     <div className="centered-spinner"><div className="spinner" /></div>
-                                ) : ledgerTab === 'REPORTS' ? (
-                                    history.length === 0 ? (
-                                        <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                            <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.2 }}>📋</div>
-                                            No transaction history reported yet. Place some trades.
-                                        </div>
-                                    ) : (
-                                        <table className="tf-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>SYMBOL</th>
-                                                    <th className="text-center">SIDE</th>
-                                                    <th className="text-right">QTY</th>
-                                                    <th className="text-center">TYPE</th>
-                                                    <th className="text-right">PRICE</th>
-                                                    <th className="text-center">STATUS</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {history.slice(0, 6).map((order) => (
-                                                    <tr key={order.id}>
-                                                        <td style={{ fontWeight: 700, color: 'var(--text)' }}>{order.symbol}</td>
-                                                        <td className="text-center">
-                                                            <span style={{ 
-                                                                color: order.side === 'BUY' ? 'var(--primary)' : 'var(--red)', 
-                                                                fontWeight: 900,
-                                                                fontSize: '0.8rem',
-                                                                letterSpacing: '0.05em'
-                                                            }}>
-                                                                {order.side}
-                                                            </span>
-                                                        </td>
-                                                        <td className="text-right" style={{ fontWeight: 600 }}>{order.quantity}</td>
-                                                        <td className="text-center">
-                                                            <span style={{ 
-                                                                fontSize: '0.65rem', 
-                                                                fontWeight: 700, 
-                                                                color: 'var(--text-muted)',
-                                                                background: 'rgba(255,255,255,0.03)',
-                                                                padding: '2px 6px',
-                                                                borderRadius: '4px',
-                                                                border: '1px solid var(--border)'
-                                                            }}>
-                                                                {order.type}
-                                                            </span>
-                                                        </td>
-                                                        <td className="text-right price-col">₹{fmt(order.executedPrice || order.triggerPrice || 0)}</td>
-                                                        <td className="text-center">
-                                                            <span className={`status-badge status-${order.status.toLowerCase()}`}>
-                                                                {order.status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    )
-                                ) : holdings.length === 0 ? (
+                                ) : history.length === 0 ? (
                                     <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📭</div>
-                                        No holdings yet. Place an order to start trading.
+                                        <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.2 }}>📋</div>
+                                        No transaction history reported yet. Place some trades.
                                     </div>
                                 ) : (
                                     <table className="tf-table">
                                         <thead>
                                             <tr>
-                                                <th>ASSET / EXCHANGE</th>
-                                                <th>QTY</th>
-                                                <th>AVG COST</th>
-                                                <th>LTP</th>
-                                                <th>PROFIT / LOSS</th>
-                                                <th>MARKET VALUE</th>
+                                                <th>SYMBOL</th>
+                                                <th className="text-center">SIDE</th>
+                                                <th className="text-right">QTY</th>
+                                                <th className="text-center">TYPE</th>
+                                                <th className="text-right">PRICE</th>
+                                                <th className="text-center">STATUS</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {holdings.map((h) => {
-                                                const avgPrice = h.avgPrice ?? 0;
-                                                const quantity = h.totalQuantity ?? 0;
-                                                const ltp = marketData[h.symbol] ?? prices[h.symbol] ?? avgPrice;
-                                                const hlPnl = (ltp - avgPrice) * quantity;
-                                                const pct = avgPrice ? ((ltp - avgPrice) / avgPrice) * 100 : 0;
-                                                return (
-                                                    <tr key={h.id ?? h.symbol}>
-                                                        <td>
-                                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)', fontSize: '0.75rem' }}>
-                                                                    {h.symbol.slice(0, 1)}
-                                                                </div>
-                                                                <div>
-                                                                    <div style={{ fontWeight: 700, color: 'var(--text)' }}>{h.symbol}</div>
-                                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h.exchange ?? 'NSE'}</div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ fontWeight: 600 }}>{quantity}</td>
-                                                        <td>₹{fmt(avgPrice)}</td>
-                                                        <td style={{ fontWeight: 700, color: 'var(--text)' }}>₹{fmt(ltp)}</td>
-                                                        <td>
-                                                            <div className={hlPnl >= 0 ? 'green' : 'red'} style={{ fontWeight: 700 }}>
-                                                                {hlPnl >= 0 ? '+' : ''}₹{fmt(hlPnl)}
-                                                            </div>
-                                                            <div className={pct >= 0 ? 'green' : 'red'} style={{ fontSize: '0.72rem', opacity: 0.8 }}>
-                                                                {pct >= 0 ? '▲' : '▼'}{Math.abs(pct).toFixed(2)}%
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ fontWeight: 700 }}>₹{fmt(ltp * quantity)}</td>
-                                                    </tr>
-                                                );
-                                            })}
+                                            {history.slice(0, 6).map((order) => (
+                                                <tr key={order.id}>
+                                                    <td style={{ fontWeight: 700, color: 'var(--text)' }}>{order.symbol}</td>
+                                                    <td className="text-center">
+                                                        <span style={{ 
+                                                            color: order.side === 'BUY' ? 'var(--primary)' : 'var(--red)', 
+                                                            fontWeight: 900,
+                                                            fontSize: '0.8rem',
+                                                            letterSpacing: '0.05em'
+                                                        }}>
+                                                            {order.side}
+                                                        </span>
+                                                    </td>
+                                                    <td className="text-right" style={{ fontWeight: 600 }}>{order.quantity}</td>
+                                                    <td className="text-center">
+                                                        <span style={{ 
+                                                            fontSize: '0.65rem', 
+                                                            fontWeight: 700, 
+                                                            color: 'var(--text-muted)',
+                                                            background: 'rgba(255,255,255,0.03)',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            border: '1px solid var(--border)'
+                                                        }}>
+                                                            {order.type}
+                                                        </span>
+                                                    </td>
+                                                    <td className="text-right price-col">₹{fmt(order.executedPrice || order.triggerPrice || 0)}</td>
+                                                    <td className="text-center">
+                                                        <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                                                            {order.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 )}
                                 <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    <span>Showing {ledgerTab === 'REPORTS' ? history.length : holdings.length} active positions</span>
+                                    <span>Showing {history.length} recorded orders</span>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button className="btn" style={{ padding: '4px 8px', background: 'var(--surface)', border: '1px solid var(--border)' }}>&lt;</button>
                                         <button className="btn" style={{ padding: '4px 12px', background: 'var(--primary-dim)', color: 'var(--primary)', border: '1px solid var(--primary)' }}>1</button>
@@ -519,59 +503,6 @@ export default function DashboardPage() {
                                     <span className="status-badge status-successful">LIVE</span>
                                 </div>
                                 <MarketNews />
-                            </div>
-
-                            <div className="card" style={{ alignSelf: 'start' }}>
-                                <div style={{ fontWeight: 600, marginBottom: '1rem' }}>Quick Order</div>
-                                <form className="order-panel" onSubmit={placeQuickOrder}>
-                                    <div className="tab-row">
-                                        <button type="button" className={`order-tab buy ${side === 'BUY' ? 'active' : ''}`} onClick={() => setSide('BUY')}>BUY</button>
-                                        <button type="button" className={`order-tab sell ${side === 'SELL' ? 'active' : ''}`} onClick={() => setSide('SELL')}>SELL</button>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Symbol</label>
-                                        <input className="form-input" placeholder="e.g. RELIANCE" value={orderForm.symbol}
-                                            onChange={e => setOrderForm(f => ({ ...f, symbol: e.target.value }))} required />
-                                    </div>
-                                    <div className="form-row">
-                                        <div className="form-group">
-                                            <label>Qty</label>
-                                            <input className="form-input" type="number" min="1" placeholder="1" value={orderForm.quantity}
-                                                onChange={e => setOrderForm(f => ({ ...f, quantity: e.target.value }))} required />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Exchange</label>
-                                            <select className="form-input" value={orderForm.exchange}
-                                                onChange={e => setOrderForm(f => ({ ...f, exchange: e.target.value }))}>
-                                                <option>NSE</option>
-                                                <option>BSE</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Order Type</label>
-                                        <select className="form-input" value={orderForm.orderType}
-                                            onChange={e => setOrderForm(f => ({ ...f, orderType: e.target.value }))}>
-                                            <option value="MARKET">Market</option>
-                                            <option value="LIMIT">Limit</option>
-                                            <option value="STOP_LOSS">Stop Loss</option>
-                                        </select>
-                                    </div>
-                                    {orderForm.orderType !== 'MARKET' && (
-                                        <div className="form-group">
-                                            <label>Price per Unit (₹)</label>
-                                            <input className="form-input" type="number" step="0.01" placeholder="0.00" value={orderForm.pricePerUnit}
-                                                onChange={e => setOrderForm(f => ({ ...f, pricePerUnit: e.target.value }))} />
-                                        </div>
-                                    )}
-                                    <button
-                                        type="submit"
-                                        className={`btn btn-full ${side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
-                                        disabled={placing}
-                                    >
-                                        {placing ? 'Placing…' : `Place ${side} Order`}
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     </div>

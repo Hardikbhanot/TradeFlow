@@ -30,10 +30,10 @@ export default function TradeDesk({ symbol = 'RELIANCE', exchange = 'NSE' }) {
             });
 
             const candlestickSeries = chart.addCandlestickSeries({
-                upColor: '#00FFD1',
+                upColor: '#10B981',
                 downColor: '#FF4159',
                 borderVisible: false,
-                wickUpColor: '#00FFD1',
+                wickUpColor: '#10B981',
                 wickDownColor: '#FF4159',
             });
 

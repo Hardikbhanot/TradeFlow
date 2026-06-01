@@ -185,7 +185,7 @@ export default function MarketPage() {
                                 onClick={() => setSelected(sym)}
                                 style={{
                                     padding: '1.25rem', borderBottom: '1px solid var(--border)',
-                                    background: selected === sym ? 'rgba(0, 255, 209, 0.05)' : 'transparent',
+                                    background: selected === sym ? 'var(--primary-dim)' : 'transparent',
                                     cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                                 }}
                             >

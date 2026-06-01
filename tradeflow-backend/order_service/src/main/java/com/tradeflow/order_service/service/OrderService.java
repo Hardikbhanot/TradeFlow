@@ -6,6 +6,8 @@ import com.tradeflow.order_service.entity.Order;
 import com.tradeflow.order_service.enums.OrderStatus;
 import com.tradeflow.order_service.enums.OrderType;
 import com.tradeflow.order_service.repository.OrderRepository;
+import com.tradeflow.order_service.matching.MatchingEngineManager;
+import com.tradeflow.order_service.matching.TradeMatch;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class OrderService {
     private final PortfolioClient portfolioClient;
     private final MarketClient marketClient;
     private final AuthClient authClient;
+    private final MatchingEngineManager matchingEngineManager;
 
     private static final String TOPIC = "order-created-topic";
 
@@ -36,12 +39,14 @@ public class OrderService {
                         KafkaTemplate<String, Object> kafkaTemplate,
                         PortfolioClient portfolioClient,
                         MarketClient marketClient,
-                        AuthClient authClient) {
+                        AuthClient authClient,
+                        MatchingEngineManager matchingEngineManager) {
         this.orderRepository = orderRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.portfolioClient = portfolioClient;
         this.marketClient = marketClient;
         this.authClient = authClient;
+        this.matchingEngineManager = matchingEngineManager;
     }
 
     @Transactional
@@ -137,6 +142,81 @@ public class OrderService {
     }
 
     @Transactional
+    public void processOrderMatching(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            log.warn("⚠️ Order {} is not PENDING (status: {}). Skipping matching.", orderId, order.getStatus());
+            return;
+        }
+
+        log.info("🔍 Submitting Order ID: {} ({}) to in-memory Matching Engine.", orderId, order.getType());
+        List<TradeMatch> matches = matchingEngineManager.submitOrder(order);
+
+        if (matches.isEmpty()) {
+            if (order.getType() == OrderType.MARKET) {
+                log.warn("❌ Market Order {} could not be matched (No liquidity). Marking as FAILED.", orderId);
+                updateOrderStatus(orderId, OrderStatus.FAILED);
+            } else {
+                log.info("⏳ Limit Order {} added to in-memory order book. No immediate matches found.", orderId);
+            }
+            return;
+        }
+
+        // Process all execution matches
+        for (TradeMatch match : matches) {
+            executeTradeMatch(match);
+        }
+    }
+
+    @Transactional
+    public void executeTradeMatch(TradeMatch match) {
+        log.info("🤝 Executing Trade Match: {} shares of {} at ₹{} between Buyer Order {} and Seller Order {}", 
+                match.getQuantity(), match.getBuyOrder().getSymbol(), match.getPrice(), 
+                match.getBuyOrder().getOrderId(), match.getSellOrder().getOrderId());
+
+        processMatchedOrder(match.getBuyOrder().getOrderId(), match.getQuantity(), match.getPrice());
+        processMatchedOrder(match.getSellOrder().getOrderId(), match.getQuantity(), match.getPrice());
+    }
+
+    private void processMatchedOrder(Long orderId, int matchedQty, BigDecimal matchPrice) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (matchedQty == order.getQuantity()) {
+            // Full Fill
+            completeOrder(orderId, matchPrice);
+        } else if (matchedQty < order.getQuantity()) {
+            // Partial Fill
+            int remainingQty = order.getQuantity() - matchedQty;
+
+            // 1. Update original order in DB to remaining quantity (retains PENDING status)
+            order.setQuantity(remainingQty);
+            orderRepository.save(order);
+            log.info("⏳ Order ID {} partially filled. Remaining quantity updated to {} in DB.", orderId, remainingQty);
+
+            // 2. Create a separate completed order record for the matched portion
+            Order filledOrder = new Order();
+            filledOrder.setUserId(order.getUserId());
+            filledOrder.setSymbol(order.getSymbol());
+            filledOrder.setQuantity(matchedQty);
+            filledOrder.setExchange(order.getExchange());
+            filledOrder.setSide(order.getSide());
+            filledOrder.setType(order.getType());
+            filledOrder.setTriggerPrice(order.getTriggerPrice());
+            filledOrder.setStatus(OrderStatus.COMPLETED);
+            filledOrder.setExecutedPrice(matchPrice);
+
+            Order savedFilled = orderRepository.save(filledOrder);
+            log.info("💾 Saved partial fill order record with ID {} (Status: COMPLETED). Triggering settlement.", savedFilled.getId());
+
+            // 3. Trigger standard settlement events for the matched portion
+            publishSettlementEvents(savedFilled, matchPrice);
+        }
+    }
+
+    @Transactional
     public void completeOrder(Long orderId, BigDecimal executedPrice) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
@@ -158,7 +238,12 @@ public class OrderService {
         order.setExecutedPrice(executedPrice);
         orderRepository.save(order);
 
-        // 2. Wallet Credit for Sells
+        // 2. Trigger settlement events
+        publishSettlementEvents(order, executedPrice);
+    }
+
+    private void publishSettlementEvents(Order order, BigDecimal executedPrice) {
+        // 1. Wallet Credit for Sells
         if (order.getSide() == OrderSide.SELL) {
             BigDecimal totalCredit = BigDecimal.valueOf(order.getQuantity()).multiply(executedPrice);
 
@@ -172,7 +257,7 @@ public class OrderService {
             log.info("💰 Sell order confirmed. Sending ₹{} to Wallet for User {}", totalCredit, order.getUserId());
         }
 
-        // 3. Notify Portfolio Service to update holdings
+        // 2. Notify Portfolio Service to update holdings
         OrderCompletedEvent completedEvent = new OrderCompletedEvent(
                 order.getId(),
                 order.getUserId(),
@@ -185,7 +270,7 @@ public class OrderService {
         kafkaTemplate.send("order-completed-topic", completedEvent);
         log.info("📢 OrderCompletedEvent published for Portfolio update: {}", order.getSymbol());
 
-        // 4. Notify Notification Service
+        // 3. Notify Notification Service
         String tradeMessage = String.format(
                 "Successfully executed %s order for %d shares of %s at ₹%.2f",
                 order.getSide().name(), order.getQuantity(), order.getSymbol(), executedPrice);
