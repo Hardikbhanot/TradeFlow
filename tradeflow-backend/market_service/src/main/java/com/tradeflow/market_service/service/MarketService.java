@@ -102,7 +102,7 @@ public class MarketService {
                 activeToken = apiSecret;
             }
 
-            headers.set("Authorization", "Bearer " + activeToken);
+            headers.set("Authorization", activeToken);
             headers.set("Accept", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -171,7 +171,7 @@ public class MarketService {
                 activeToken = apiSecret;
             }
 
-            headers.set("Authorization", "Bearer " + activeToken);
+            headers.set("Authorization", activeToken);
             headers.set("Accept", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
