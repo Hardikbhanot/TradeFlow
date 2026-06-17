@@ -466,16 +466,20 @@ export default function DashboardPage() {
                             {!brokerStatus.connected && (
                                 <div className="card" style={{ alignSelf: 'start' }}>
                                     <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>Broker Connection</span>
-                                        {loadingBroker ? null : (
+                                        <span>Broker Verification</span>
+                                        {loadingBroker ? (
+                                            <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>
+                                                Checking...
+                                            </span>
+                                        ) : (
                                             <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
                                                 DISCONNECTED
                                             </span>
                                         )}
                                     </div>
                                     
-                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                                        Connect your Upstox account to enable live market data and real-time trading.
+                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                                        Verify your TradeFlow account by logging into Upstox. This will allow live market data, order routing, and secure authorization via Upstox OAuth.
                                     </div>
 
                                     <button 
@@ -484,7 +488,7 @@ export default function DashboardPage() {
                                         style={{ background: 'var(--primary)', color: '#000' }}
                                         onClick={connectBroker}
                                     >
-                                        Connect Upstox Broker
+                                        Verify with Upstox
                                     </button>
                                 </div>
                             )}
