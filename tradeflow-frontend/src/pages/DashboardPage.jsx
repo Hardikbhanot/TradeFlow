@@ -146,28 +146,16 @@ export default function DashboardPage() {
     const pnlPct = totalInvested ? (pnl / totalInvested) * 100 : 0;
 
     async function connectBroker() {
-        // Try backend first, then fallback to direct Upstox OAuth using Vite env vars
         try {
             const res = await api.get('/auth/upstox/login-url');
-            if (res.data?.url && res.data.url.includes('upstox')) {
+            if (res.data?.url) {
                 window.location.href = res.data.url;
                 return;
             }
+            addToast('Unable to retrieve Upstox login URL from backend.', 'error');
         } catch (err) {
-            // ignore and fallback
+            addToast('Failed to get connection URL from backend.', 'error');
         }
-
-        // Fallback: construct Upstox OAuth URL from Vite env vars
-        const clientId = import.meta.env.VITE_UPSTOX_API_KEY || import.meta.env.VITE_UPSTOX_CLIENT_ID || '';
-        const redirectUri = import.meta.env.VITE_UPSTOX_REDIRECT_URI || import.meta.env.VITE_UPSTOX_REDIRECT || '';
-
-        if (!clientId || !redirectUri) {
-            addToast('Upstox client id or redirect URI not configured in frontend env.', 'error');
-            return;
-        }
-
-        const url = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-        window.location.href = url;
     }
 
     async function placeQuickOrder(e) {
