@@ -22,25 +22,25 @@ import org.springframework.data.redis.core.ScanOptions;
 
 @Service
 @Slf4j
-public class IndMoneyInstrumentService {
+public class UpstoxInstrumentService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private static final String CSV_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.csv.gz";
     public static final String REDIS_HASH_KEY = "market:instruments";
     public static final String EQUITY_SET_KEY = "market:equity_symbols";
 
-    public IndMoneyInstrumentService(RedisTemplate<String, Object> redisTemplate) {
+    public UpstoxInstrumentService(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
     /**
      * Executes immediately after Spring Boot starts up.
-     * Downloads the universal NSE Instruments CSV master file, unzips it in memory,
-     * and maps every NSE Trading Symbol to its ISIN Instrument Key in Redis.
+     * Downloads the Upstox NSE CSV master file, unzips it in memory,
+     * and maps Every NSE Trading Symbol to its ISIN Instrument Key in Redis.
      */
     @EventListener(ApplicationReadyEvent.class)
     public void fetchAndCacheInstruments() {
-        log.info("🚀 Starting download of universal NSE Instruments CSV...");
+        log.info("🚀 Starting download of Upstox NSE Instruments CSV...");
 
         try {
             URL url = new URL(CSV_URL);
@@ -61,6 +61,9 @@ public class IndMoneyInstrumentService {
                 int count = 0;
 
                 for (CSVRecord record : records) {
+                    // Based on Upstox Docs:
+                    // instrument_key is typically column 0 (e.g. NSE_EQ|INE002A01018)
+                    // tradingsymbol is typically column 2 (e.g. RELIANCE)
                     String instrumentKey = record.get("instrument_key");
                     String tradingSymbol = record.get("tradingsymbol");
 
@@ -89,10 +92,10 @@ public class IndMoneyInstrumentService {
                     log.info("📥 Loaded final batch. Total instruments: {}", count);
                 }
 
-                log.info("✅ Successfully cached all NSE symbols to Redis!");
+                log.info("✅ Successfully cached all Upstox NSE symbols to Redis!");
             }
         } catch (Exception e) {
-            log.error("❌ Failed to fetch or parse NSE CSV: {}", e.getMessage(), e);
+            log.error("❌ Failed to fetch or parse Upstox CSV: {}", e.getMessage(), e);
         }
     }
 

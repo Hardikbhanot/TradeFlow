@@ -15,17 +15,17 @@ public class MarketController {
 
     private final MarketService marketService;
     private final NewsService newsService;
-    private final com.tradeflow.market_service.service.IndMoneyAuthService indMoneyAuthService;
-    private final com.tradeflow.market_service.service.IndMoneyInstrumentService indMoneyInstrumentService;
+    private final com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService;
+    private final com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService;
 
     public MarketController(MarketService marketService,
             NewsService newsService,
-            com.tradeflow.market_service.service.IndMoneyAuthService indMoneyAuthService,
-            com.tradeflow.market_service.service.IndMoneyInstrumentService indMoneyInstrumentService) {
+            com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService,
+            com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService) {
         this.marketService = marketService;
         this.newsService = newsService;
-        this.indMoneyAuthService = indMoneyAuthService;
-        this.indMoneyInstrumentService = indMoneyInstrumentService;
+        this.upStoxAuthService = upStoxAuthService;
+        this.upstoxInstrumentService = upstoxInstrumentService;
     }
 
     @GetMapping("/news")
@@ -56,18 +56,19 @@ public class MarketController {
 
     @GetMapping("/search")
     public List<String> search(@RequestParam("q") String query) {
-        return indMoneyInstrumentService.searchInstruments(query);
+        return upstoxInstrumentService.searchInstruments(query);
     }
 
 
     @GetMapping("/login")
     public String getUpstoxLoginUrl() {
-        return "https://www.indstocks.com/app/api-trading";
+        return upStoxAuthService.getLoginUrl();
     }
 
-    @GetMapping({"/upstox/callback", "/indmoney/callback"})
-    public String handleCallback(@RequestParam(value = "code", required = false) String code) {
-        return "TradeFlow is statically connected to INDstocks via Whitelisted IP. No interactive login or callback is needed!";
+    @GetMapping("/upstox/callback")
+    public String handleUpstoxCallback(@RequestParam("code") String code) {
+        String token = upStoxAuthService.getAccessToken(code);
+        return token != null ? "Token successfully generated: " + token : "Failed to generate Upstox token.";
     }
 
     @GetMapping("/data/{symbol}")
