@@ -477,35 +477,64 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="dashboard-right">
-                            {!brokerStatus.connected && (
-                                <div className="card" style={{ alignSelf: 'start' }}>
-                                    <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>Broker Verification</span>
-                                        {loadingBroker ? (
-                                            <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>
-                                                Checking...
-                                            </span>
-                                        ) : (
-                                            <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
-                                                DISCONNECTED
-                                            </span>
-                                        )}
-                                    </div>
-                                    
-                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
-                                        Verify your TradeFlow account by logging into Upstox. This will allow live market data, order routing, and secure authorization via Upstox OAuth.
-                                    </div>
-
-                                    <button 
-                                        type="button" 
-                                        className="btn btn-primary btn-full"
-                                        style={{ background: 'var(--primary)', color: '#000' }}
-                                        onClick={connectBroker}
-                                    >
-                                        Verify with Upstox
-                                    </button>
+                            <div className="card" style={{ alignSelf: 'start' }}>
+                                <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>Broker Verification</span>
+                                    {loadingBroker ? (
+                                        <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>
+                                            Checking...
+                                        </span>
+                                    ) : brokerStatus.connected ? (
+                                        <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>
+                                            CONNECTED
+                                        </span>
+                                    ) : (
+                                        <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
+                                            DISCONNECTED
+                                        </span>
+                                    )}
                                 </div>
-                            )}
+
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                                    {brokerStatus.connected ? (
+                                        <>TradeFlow is connected to <strong>Upstox</strong>. Use the buttons below to reconnect or refresh status.</>
+                                    ) : (
+                                        <>Verify your TradeFlow account by logging into Upstox. This will allow live market data, order routing, and secure authorization via Upstox OAuth.</>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {!brokerStatus.connected ? (
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary btn-full"
+                                            style={{ background: 'var(--primary)', color: '#000', flex: 1 }}
+                                            onClick={connectBroker}
+                                        >
+                                            Verify with Upstox
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="btn"
+                                                style={{ padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)' }}
+                                                onClick={() => { fetchBrokerStatus(); addToast('Refreshed broker status.'); }}
+                                            >
+                                                Refresh Status
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-primary"
+                                                style={{ padding: '8px 12px', background: 'var(--primary)', color: '#000' }}
+                                                onClick={connectBroker}
+                                            >
+                                                Reconnect Upstox
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
 
                             <div className="card" style={{ alignSelf: 'start' }}>
                                 <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
