@@ -99,6 +99,9 @@ public class MarketService {
                 log.debug("No Redis token found, falling back to ENV token.");
                 activeToken = accessToken;
             }
+            if (activeToken != null && !activeToken.isBlank() && !activeToken.toLowerCase().startsWith("bearer ")) {
+                activeToken = "Bearer " + activeToken;
+            }
 
             headers.set("Authorization", activeToken);
             headers.set("Accept", "application/json");
@@ -161,6 +164,9 @@ public class MarketService {
             String activeToken = (String) redisTemplate.opsForValue().get("upstox:access_token");
             if (activeToken == null) {
                 activeToken = accessToken;
+            }
+            if (activeToken != null && !activeToken.isBlank() && !activeToken.toLowerCase().startsWith("bearer ")) {
+                activeToken = "Bearer " + activeToken;
             }
 
             headers.set("Authorization", activeToken);
