@@ -57,6 +57,7 @@ public class UpstoxAuthController {
     public ResponseEntity<Map<String, String>> getUpstoxLoginUrl() {
         String url = "https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id="
                 + apiKey + "&redirect_uri=" + redirectUri;
+        log.info("Generating Upstox Login URL: {}", url);
         return ResponseEntity.ok(Map.of("url", url));
     }
 
