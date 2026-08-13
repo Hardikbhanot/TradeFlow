@@ -63,21 +63,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy docker-compose, env and other files to Droplet
+      - name: Copy docker-compose, env and other files to Oracle VM
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 139.59.25.118
-          username: root
+          host: 137.23.60.224
+          username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "tradeflow-backend/docker-compose.deploy.yml"
           target: "/home/tradeflow"
           strip_components: 1
 
-      - name: Deploy to Droplet via SSH
+      - name: Deploy to Oracle VM via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 139.59.25.118
-          username: root
+          host: 137.23.60.224
+          username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             
