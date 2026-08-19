@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -61,16 +62,9 @@ public class MarketService {
             return symbol;
         }
 
-        // Query the Redis Hash populated during application startup
-        Object cachedKey = redisTemplate.opsForHash().get(UpstoxInstrumentService.REDIS_HASH_KEY, symbol.toUpperCase());
-
-        if (cachedKey != null) {
-            log.debug("Found {} dynamically mapped to {}", symbol, cachedKey);
-            return cachedKey.toString();
-        }
-
-        log.warn("Symbol {} not found in Redis mapping. Falling back to generic structure.", symbol);
-        return "NSE_EQ|" + symbol.toUpperCase(); // Fallback structure
+        return upstoxInstrumentService.resolveInstrumentKey(symbol)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Instrument not found: " + symbol));
     }
 
     public BigDecimal getLivePrice(String symbol) {

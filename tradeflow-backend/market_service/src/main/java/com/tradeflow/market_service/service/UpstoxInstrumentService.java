@@ -6,7 +6,16 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -17,6 +26,7 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 
@@ -26,11 +36,82 @@ public class UpstoxInstrumentService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private static final String CSV_URL = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.csv.gz";
+    private static final String INSTRUMENT_SEARCH_URL = "https://api.upstox.com/v2/instruments/search?query=";
     public static final String REDIS_HASH_KEY = "market:instruments";
     public static final String EQUITY_SET_KEY = "market:equity_symbols";
 
     public UpstoxInstrumentService(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
+    }
+
+    @Value("${upstox.access.token:}")
+    private String accessToken;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Resolves a symbol from Redis first and lazily learns symbols that were not
+     * present in the startup instrument cache from Upstox.
+     */
+    public Optional<String> resolveInstrumentKey(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return Optional.empty();
+        }
+
+        String normalizedSymbol = symbol.trim().toUpperCase();
+        Object cachedKey = redisTemplate.opsForHash().get(REDIS_HASH_KEY, normalizedSymbol);
+        if (cachedKey != null && !cachedKey.toString().isBlank()) {
+            return Optional.of(cachedKey.toString());
+        }
+
+        try {
+            String encodedQuery = java.net.URLEncoder.encode(normalizedSymbol,
+                    java.nio.charset.StandardCharsets.UTF_8.toString());
+            HttpHeaders headers = new HttpHeaders();
+            String activeToken = (String) redisTemplate.opsForValue().get("upstox:access_token");
+            if (activeToken == null || activeToken.isBlank()) {
+                activeToken = accessToken;
+            }
+            if (activeToken != null && !activeToken.isBlank()
+                    && !activeToken.toLowerCase().startsWith("bearer ")) {
+                activeToken = "Bearer " + activeToken;
+            }
+            headers.set("Authorization", activeToken);
+            headers.set("Accept", "application/json");
+            headers.set("Api-Version", "2.0");
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    INSTRUMENT_SEARCH_URL + encodedQuery,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    String.class);
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                JsonNode data = objectMapper.readTree(response.getBody()).path("data");
+                for (JsonNode instrument : data) {
+                    String tradingSymbol = instrument.path("trading_symbol").asText();
+                    String instrumentKey = instrument.path("instrument_key").asText();
+                    if (normalizedSymbol.equalsIgnoreCase(tradingSymbol) && !instrumentKey.isBlank()) {
+                        cacheInstrument(normalizedSymbol, instrumentKey);
+                        return Optional.of(instrumentKey);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Unable to resolve {} through Upstox instrument search: {}", normalizedSymbol,
+                    e.getMessage());
+        }
+
+        return Optional.empty();
+    }
+
+    private void cacheInstrument(String symbol, String instrumentKey) {
+        redisTemplate.opsForHash().put(REDIS_HASH_KEY, symbol, instrumentKey);
+        if (instrumentKey.startsWith("NSE_EQ|")) {
+            redisTemplate.opsForSet().add(EQUITY_SET_KEY, symbol);
+        }
+        log.info("Cached dynamically resolved instrument {} -> {}", symbol, instrumentKey);
     }
 
     /**
