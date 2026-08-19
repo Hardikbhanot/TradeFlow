@@ -20,4 +20,5 @@ public class Holding {
     private String exchange;
     private Integer totalQuantity;
     private BigDecimal avgPrice;   
+    private BigDecimal realizedProfit = BigDecimal.ZERO;
 }

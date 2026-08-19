@@ -76,6 +76,11 @@ public class WalletController {
         return walletService.getOrCreateWallet(userId);
     }
 
+    @GetMapping("/user/{userId}/balance")
+    public BigDecimal getBalance(@PathVariable Long userId) {
+        return walletService.getOrCreateWallet(userId).getBalance();
+    }
+
     /**
      * Returns the full ledger (transaction history) for the authenticated user.
      * GET /api/v1/wallets/ledger

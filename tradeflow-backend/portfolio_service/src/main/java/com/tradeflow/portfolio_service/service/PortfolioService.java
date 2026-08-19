@@ -12,6 +12,9 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Comparator;
 
 @Service
 @Slf4j
@@ -85,17 +88,98 @@ public class PortfolioService {
 
     private void handleSell(OrderCompletedEvent event, Optional<Holding> existingHolding) {
         existingHolding.ifPresentOrElse(holding -> {
+            BigDecimal realized = event.getPrice().subtract(holding.getAvgPrice())
+                .multiply(event.getQuantity());
+            BigDecimal previousRealized = holding.getRealizedProfit() == null
+                ? BigDecimal.ZERO : holding.getRealizedProfit();
+            holding.setRealizedProfit(previousRealized.add(realized));
             int remainingQuantity = holding.getTotalQuantity() - event.getQuantity().intValue();
 
             if (remainingQuantity <= 0) {
-                holdingRepository.delete(holding);
-                log.info("Holding for {} fully liquidated and removed.", event.getSymbol());
+                holding.setTotalQuantity(0);
+                holdingRepository.save(holding);
+                log.info("Holding for {} fully liquidated; retained for realized P&L history.", event.getSymbol());
             } else {
                 holding.setTotalQuantity(remainingQuantity);
                 holdingRepository.save(holding);
                 log.info("Reduced holding for {}: Remaining qty {}", event.getSymbol(), remainingQuantity);
             }
         }, () -> log.error("❌ Critical Error: Attempted to sell {} but no holding found!", event.getSymbol()));
+    }
+
+    public Map<String, Object> getAnalytics(Long userId) {
+        List<Holding> holdings = getUserHoldings(userId);
+        List<Map<String, Object>> performers = new ArrayList<>();
+        BigDecimal invested = BigDecimal.ZERO;
+        BigDecimal current = BigDecimal.ZERO;
+        BigDecimal dailyPnl = BigDecimal.ZERO;
+        BigDecimal realized = BigDecimal.ZERO;
+
+        for (Holding holding : holdings) {
+            BigDecimal cost = holding.getAvgPrice().multiply(BigDecimal.valueOf(holding.getTotalQuantity()));
+            BigDecimal ltp = holding.getAvgPrice();
+            BigDecimal prevClose = ltp;
+            try {
+                Map<String, Object> data = (Map<String, Object>) restTemplate.getForObject(
+                        marketServiceUrl + "/api/v1/market/data/" + holding.getSymbol(), Map.class);
+                if (data != null) {
+                    ltp = new BigDecimal(data.get("ltp").toString());
+                    prevClose = new BigDecimal(data.get("prevClose").toString());
+                }
+            } catch (Exception e) {
+                log.debug("Market data unavailable for analytics symbol {}", holding.getSymbol());
+            }
+
+            BigDecimal value = ltp.multiply(BigDecimal.valueOf(holding.getTotalQuantity()));
+            BigDecimal unrealized = value.subtract(cost);
+            BigDecimal dayPnl = ltp.subtract(prevClose).multiply(BigDecimal.valueOf(holding.getTotalQuantity()));
+            Map<String, Object> performer = new HashMap<>();
+            performer.put("symbol", holding.getSymbol());
+            performer.put("value", value);
+            performer.put("unrealizedProfit", unrealized);
+            performer.put("returnPercent", cost.signum() == 0 ? BigDecimal.ZERO
+                    : unrealized.divide(cost, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
+            performers.add(performer);
+            invested = invested.add(cost);
+            current = current.add(value);
+            dailyPnl = dailyPnl.add(dayPnl);
+            realized = realized.add(holding.getRealizedProfit() == null ? BigDecimal.ZERO : holding.getRealizedProfit());
+        }
+
+        performers.sort(Comparator.comparing(item -> ((BigDecimal) item.get("unrealizedProfit"))));
+        BigDecimal currentValue = current;
+        Map<String, Object> result = new HashMap<>();
+        result.put("investedValue", invested);
+        result.put("currentValue", current);
+        result.put("unrealizedProfit", current.subtract(invested));
+        result.put("realizedProfit", realized);
+        result.put("dailyProfit", dailyPnl);
+        result.put("dailyReturnPercent", current.signum() == 0 ? BigDecimal.ZERO
+                : dailyPnl.divide(current, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
+        result.put("bestPerformers", performers.stream().skip(Math.max(0, performers.size() - 3)).toList());
+        result.put("worstPerformers", performers.stream().limit(Math.min(3, performers.size())).toList());
+        result.put("allocation", performers.stream().map(item -> {
+            Map<String, Object> allocation = new HashMap<>();
+            allocation.put("symbol", item.get("symbol"));
+            BigDecimal value = (BigDecimal) item.get("value");
+            allocation.put("value", value);
+                allocation.put("percentage", currentValue.signum() == 0 ? BigDecimal.ZERO
+                    : value.divide(currentValue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
+            return allocation;
+        }).toList());
+
+        try {
+            Map<String, Object> nifty = (Map<String, Object>) restTemplate.getForObject(
+                    marketServiceUrl + "/api/v1/market/data/NIFTY50", Map.class);
+            BigDecimal niftyChange = nifty == null ? BigDecimal.ZERO : new BigDecimal(nifty.get("changePercent").toString());
+            result.put("nifty50ReturnPercent", niftyChange);
+            result.put("benchmarkDifference", result.get("dailyReturnPercent") instanceof BigDecimal
+                    ? ((BigDecimal) result.get("dailyReturnPercent")).subtract(niftyChange) : BigDecimal.ZERO);
+        } catch (Exception e) {
+            result.put("nifty50ReturnPercent", BigDecimal.ZERO);
+            result.put("benchmarkDifference", BigDecimal.ZERO);
+        }
+        return result;
     }
 
     public String getAiPortfolioSummary(Long userId) {

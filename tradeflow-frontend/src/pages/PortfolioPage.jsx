@@ -10,6 +10,7 @@ export default function PortfolioPage() {
     const [holdings, setHoldings] = useState([]);
     const [prices, setPrices] = useState({});
     const [loading, setLoading] = useState(true);
+    const [analytics, setAnalytics] = useState(null);
     const { marketData } = useWebSocket(user?.userId);
 
     const fetchHoldings = useCallback(async () => {
@@ -29,12 +30,18 @@ export default function PortfolioPage() {
             const symbols = holdings.map(h => h.symbol).join(',');
             const res = await api.get('/api/v1/market/prices', { params: { symbols } });
             setPrices(prev => ({ ...prev, ...res.data }));
-        } catch {}
+        } catch (error) {
+            console.error('Failed to fetch portfolio prices', error);
+        }
     }, [holdings]);
 
     useEffect(() => {
         fetchHoldings();
     }, [fetchHoldings]);
+
+    useEffect(() => {
+        api.get('/api/v1/portfolio/analytics').then(res => setAnalytics(res.data)).catch(() => {});
+    }, [holdings]);
 
     useEffect(() => {
         fetchPrices();
@@ -77,6 +84,24 @@ export default function PortfolioPage() {
                             <div className="hero-stat-item">
                                 <div className="label">TOTAL INVESTED</div>
                                 <div className="value">₹{fmt(stats.invested)}</div>
+                            </div>
+                            <div className="hero-stat-item">
+                                <div className="label">REALIZED P&L</div>
+                                <div className={`value ${(analytics?.realizedProfit ?? 0) >= 0 ? 'green' : 'red'}`}>
+                                    ₹{fmt(analytics?.realizedProfit ?? 0)}
+                                </div>
+                            </div>
+                            <div className="hero-stat-item">
+                                <div className="label">TODAY / NIFTY 50</div>
+                                <div className={`value ${(analytics?.benchmarkDifference ?? 0) >= 0 ? 'green' : 'red'}`}>
+                                    {(analytics?.benchmarkDifference ?? 0) >= 0 ? '+' : ''}{Number(analytics?.benchmarkDifference ?? 0).toFixed(2)}%
+                                </div>
+                            </div>
+                            <div className="hero-stat-item">
+                                <div className="label">DAILY RETURN</div>
+                                <div className={`value ${(analytics?.dailyReturnPercent ?? 0) >= 0 ? 'green' : 'red'}`}>
+                                    {(analytics?.dailyReturnPercent ?? 0) >= 0 ? '+' : ''}{Number(analytics?.dailyReturnPercent ?? 0).toFixed(2)}%
+                                </div>
                             </div>
                             <div className="hero-stat-item">
                                 <div className="label">TOTAL VALUE</div>
@@ -184,6 +209,25 @@ export default function PortfolioPage() {
                             Consider diversifying into broad-market ETFs or different sectors to reduce idiosyncratic risk.
                         </p>
                     </div>
+
+                    {analytics && (analytics.bestPerformers?.length > 0 || analytics.worstPerformers?.length > 0) && (
+                        <div className="card">
+                            <div style={{ fontWeight: 800, marginBottom: '1rem' }}>TOP PERFORMERS</div>
+                            {[...(analytics.bestPerformers || []).slice(-3).reverse()].map(item => (
+                                <div key={`best-${item.symbol}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                                    <span>{item.symbol}</span>
+                                    <span className={Number(item.unrealizedProfit) >= 0 ? 'green' : 'red'}>₹{fmt(item.unrealizedProfit)}</span>
+                                </div>
+                            ))}
+                            <div style={{ fontWeight: 800, margin: '1.2rem 0 1rem' }}>NEEDS ATTENTION</div>
+                            {(analytics.worstPerformers || []).slice(0, 3).map(item => (
+                                <div key={`worst-${item.symbol}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                                    <span>{item.symbol}</span>
+                                    <span className={Number(item.unrealizedProfit) >= 0 ? 'green' : 'red'}>₹{fmt(item.unrealizedProfit)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </Layout>

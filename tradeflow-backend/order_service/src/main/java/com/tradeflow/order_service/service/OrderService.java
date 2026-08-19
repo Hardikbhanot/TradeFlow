@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import com.tradeflow.order_service.client.MarketClient;
 import com.tradeflow.order_service.client.AuthClient;
+import com.tradeflow.order_service.client.WalletClient;
 import com.tradeflow.order_service.enums.OrderSide;
 import com.tradeflow.order_service.dto.OrderRequest;
 import com.tradeflow.order_service.dto.OrderCompletedEvent;
@@ -31,6 +32,7 @@ public class OrderService {
     private final PortfolioClient portfolioClient;
     private final MarketClient marketClient;
     private final AuthClient authClient;
+    private final WalletClient walletClient;
     private final MatchingEngineManager matchingEngineManager;
 
     private static final String TOPIC = "order-created-topic";
@@ -40,17 +42,21 @@ public class OrderService {
                         PortfolioClient portfolioClient,
                         MarketClient marketClient,
                         AuthClient authClient,
+                        WalletClient walletClient,
                         MatchingEngineManager matchingEngineManager) {
         this.orderRepository = orderRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.portfolioClient = portfolioClient;
         this.marketClient = marketClient;
         this.authClient = authClient;
+        this.walletClient = walletClient;
         this.matchingEngineManager = matchingEngineManager;
     }
 
     @Transactional
     public Order placeOrder(OrderRequest request) {
+
+        validateOrderRequest(request);
 
         // 1. SELL VALIDATION (The "Holdings" Guard & OTP Verification)
         if (request.getSide() == OrderSide.SELL) {
@@ -85,6 +91,8 @@ public class OrderService {
         order.setExchange(request.getExchange());
         order.setSide(request.getSide());
         order.setType(request.getOrderType());
+        order.setTargetPrice(request.getTargetPrice());
+        order.setStopLossPrice(request.getStopLossPrice());
 
         // 3. Execution Logic Branching
         BigDecimal priceForReservation;
@@ -132,6 +140,57 @@ public class OrderService {
         return savedOrder;
     }
 
+    private void validateOrderRequest(OrderRequest request) {
+        if (request == null || request.getUserId() == null) {
+            throw new IllegalArgumentException("A valid user is required.");
+        }
+        if (request.getSymbol() == null || request.getSymbol().isBlank()) {
+            throw new IllegalArgumentException("Symbol is required.");
+        }
+        request.setSymbol(request.getSymbol().trim().toUpperCase());
+        if (request.getQuantity() == null || request.getQuantity() <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero.");
+        }
+        if (request.getSide() == null || request.getOrderType() == null) {
+            throw new IllegalArgumentException("Order side and order type are required.");
+        }
+
+        BigDecimal marketPrice = marketClient.getLivePrice(request.getSymbol());
+        if (marketPrice == null || marketPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Unknown symbol or unavailable market price: " + request.getSymbol());
+        }
+
+        if (request.getOrderType() != OrderType.MARKET
+                && (request.getTriggerPrice() == null
+                || request.getTriggerPrice().compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new IllegalArgumentException("A positive trigger or limit price is required for this order type.");
+        }
+        if (request.getOrderType() == OrderType.BRACKET
+                && (request.getTargetPrice() == null || request.getStopLossPrice() == null
+                || request.getTargetPrice().compareTo(BigDecimal.ZERO) <= 0
+                || request.getStopLossPrice().compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new IllegalArgumentException("Bracket orders require positive target and stop-loss prices.");
+        }
+
+        if (request.getSide() == OrderSide.SELL) {
+            boolean hasStock = portfolioClient.hasEnoughShares(request.getUserId(), request.getSymbol(),
+                    request.getExchange(), request.getQuantity());
+            if (!hasStock) {
+                throw new IllegalArgumentException("Insufficient holdings for " + request.getSymbol());
+            }
+        }
+
+        if (request.getSide() == OrderSide.BUY) {
+            BigDecimal estimatedPrice = request.getOrderType() == OrderType.MARKET
+                    ? marketPrice : request.getTriggerPrice();
+            BigDecimal required = estimatedPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
+            BigDecimal balance = walletClient.getBalance(request.getUserId());
+            if (balance == null || balance.compareTo(required) < 0) {
+                throw new IllegalArgumentException("Insufficient wallet balance. Required ₹" + required + ".");
+            }
+        }
+    }
+
     @Transactional
     public void updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
@@ -148,6 +207,16 @@ public class OrderService {
 
         if (order.getStatus() != OrderStatus.PENDING) {
             log.warn("⚠️ Order {} is not PENDING (status: {}). Skipping matching.", orderId, order.getStatus());
+            return;
+        }
+
+        if (order.getType() == OrderType.MARKET) {
+            if (order.getExecutedPrice() == null || order.getExecutedPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                updateOrderStatus(orderId, OrderStatus.FAILED);
+                log.error("❌ Market Order {} has no valid execution price.", orderId);
+                return;
+            }
+            completeOrder(orderId, order.getExecutedPrice());
             return;
         }
 
@@ -205,6 +274,8 @@ public class OrderService {
             filledOrder.setSide(order.getSide());
             filledOrder.setType(order.getType());
             filledOrder.setTriggerPrice(order.getTriggerPrice());
+            filledOrder.setTargetPrice(order.getTargetPrice());
+            filledOrder.setStopLossPrice(order.getStopLossPrice());
             filledOrder.setStatus(OrderStatus.COMPLETED);
             filledOrder.setExecutedPrice(matchPrice);
 

@@ -40,7 +40,7 @@ public class OrderBook {
             BigDecimal askPrice = lowestAskEntry.getKey();
 
             // For Limit order, if buying price is less than lowest sell price, no match is possible
-            if (buyOrder.getType() == OrderType.LIMIT && buyOrder.getTriggerPrice().compareTo(askPrice) < 0) {
+            if (buyOrder.getType() != OrderType.MARKET && buyOrder.getTriggerPrice().compareTo(askPrice) < 0) {
                 break;
             }
 
@@ -62,7 +62,7 @@ public class OrderBook {
         }
 
         // If it's a Limit order and has remaining quantity, place it in the bid book
-        if (buyOrder.getQuantity() > 0 && buyOrder.getType() == OrderType.LIMIT) {
+        if (buyOrder.getQuantity() > 0 && buyOrder.getType() != OrderType.MARKET) {
             bids.computeIfAbsent(buyOrder.getTriggerPrice(), LimitPriceQueue::new).add(buyOrder);
         }
     }
@@ -73,7 +73,7 @@ public class OrderBook {
             BigDecimal bidPrice = highestBidEntry.getKey();
 
             // For Limit order, if selling price is greater than highest buy price, no match is possible
-            if (sellOrder.getType() == OrderType.LIMIT && sellOrder.getTriggerPrice().compareTo(bidPrice) > 0) {
+            if (sellOrder.getType() != OrderType.MARKET && sellOrder.getTriggerPrice().compareTo(bidPrice) > 0) {
                 break;
             }
 
@@ -95,7 +95,7 @@ public class OrderBook {
         }
 
         // If it's a Limit order and has remaining quantity, place it in the ask book
-        if (sellOrder.getQuantity() > 0 && sellOrder.getType() == OrderType.LIMIT) {
+        if (sellOrder.getQuantity() > 0 && sellOrder.getType() != OrderType.MARKET) {
             asks.computeIfAbsent(sellOrder.getTriggerPrice(), LimitPriceQueue::new).add(sellOrder);
         }
     }

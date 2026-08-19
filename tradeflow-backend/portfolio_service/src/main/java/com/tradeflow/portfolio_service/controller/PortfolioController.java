@@ -34,4 +34,9 @@ public class PortfolioController {
     public ResponseEntity<String> getAiSummary(@RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(portfolioService.getAiPortfolioSummary(userId));
     }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<java.util.Map<String, Object>> getAnalytics(@RequestHeader("X-User-Id") Long userId) {
+        return ResponseEntity.ok(portfolioService.getAnalytics(userId));
+    }
 }

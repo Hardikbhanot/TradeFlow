@@ -31,6 +31,8 @@ public class Order {
 
 
     private BigDecimal triggerPrice;
+    private BigDecimal targetPrice;
+    private BigDecimal stopLossPrice;
     private BigDecimal executedPrice;
 
     @org.hibernate.annotations.CreationTimestamp

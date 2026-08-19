@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SymbolSearch from '../components/SymbolSearch';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const EXCHANGES = ['NSE', 'BSE'];
-const ORDER_TYPES = ['MARKET', 'LIMIT', 'STOP_LOSS'];
+const ORDER_TYPES = ['MARKET', 'LIMIT', 'STOP_LOSS', 'STOP_LIMIT', 'BRACKET'];
 const SIDES = ['BUY', 'SELL'];
 
 export default function OrdersPage() {
+    const { user } = useAuth();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const initialSymbol = queryParams.get('symbol') || '';
@@ -16,54 +18,66 @@ export default function OrdersPage() {
     const [form, setForm] = useState({
         symbol: initialSymbol, quantity: '', exchange: 'NSE',
         side: 'BUY', orderType: 'MARKET',
-        pricePerUnit: '', triggerPrice: '',
+        pricePerUnit: '', triggerPrice: '', targetPrice: '', stopLossPrice: '',
     });
     const [livePrice, setLivePrice] = useState(null);
-    const [fetchingPrice, setFetchingPrice] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [result, setResult] = useState(null);
     const [history, setHistory] = useState([]);
-    const [showOtpModal, setShowOtpModal] = useState(false);
     const [otpCode, setOtpCode] = useState('');
     const [otpError, setOtpError] = useState('');
     const [otpPlacing, setOtpPlacing] = useState(false);
     const [pendingOrder, setPendingOrder] = useState(null);
     const [holdings, setHoldings] = useState([]);
     const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+    const [walletBalance, setWalletBalance] = useState(null);
 
-    async function fetchPriceForSym(symbol) {
+    const fetchPriceForSym = useCallback(async (symbol) => {
         if (!symbol.trim()) return;
-        setFetchingPrice(true);
         try {
             const r = await api.get(`/api/v1/market/price/${symbol.toUpperCase()}`);
             setLivePrice(r.data);
             if (form.orderType === 'MARKET') {
                 setForm(f => ({ ...f, pricePerUnit: parseFloat(r.data).toFixed(2) }));
             }
-        } catch { setLivePrice('N/A'); }
-        finally { setFetchingPrice(false); }
-    }
+        } catch (error) {
+            console.error('Failed to fetch market price', error);
+            setLivePrice('N/A');
+        }
+    }, [form.orderType]);
 
-    async function fetchHistory() {
+    const fetchHistory = useCallback(async () => {
         try {
             const r = await api.get('/api/v1/orders');
             setHistory(r.data);
-        } catch {}
-    }
+        } catch (error) { console.error('Failed to fetch order history', error); }
+    }, []);
 
-    async function fetchHoldings() {
+    const fetchHoldings = useCallback(async () => {
         try {
             const r = await api.get('/api/v1/portfolio');
             setHoldings(r.data);
-        } catch {}
-    }
+        } catch (error) { console.error('Failed to fetch holdings', error); }
+    }, []);
+
+    const fetchWallet = useCallback(async () => {
+        if (!user?.userId) return;
+        try {
+            const r = await api.get(`/api/v1/wallets/user/${user.userId}`);
+            setWalletBalance(Number(r.data?.balance ?? 0));
+        } catch (error) {
+            console.error('Failed to fetch wallet balance', error);
+            setWalletBalance(null);
+        }
+    }, [user?.userId]);
 
     useEffect(() => {
         if (initialSymbol) fetchPriceForSym(initialSymbol);
         fetchHistory();
         fetchHoldings();
-    }, [initialSymbol]);
+        fetchWallet();
+    }, [initialSymbol, user?.userId, fetchPriceForSym, fetchHistory, fetchHoldings, fetchWallet]);
 
     async function confirmOrder() {
         setPlacing(true);
@@ -99,6 +113,8 @@ export default function OrdersPage() {
                     orderType: form.orderType,
                     pricePerUnit: form.pricePerUnit ? parseFloat(form.pricePerUnit) : null,
                     triggerPrice: derivedTriggerPrice,
+                    targetPrice: form.targetPrice ? parseFloat(form.targetPrice) : null,
+                    stopLossPrice: form.stopLossPrice ? parseFloat(form.stopLossPrice) : null,
                 });
                 setOtpCode('');
                 setOtpError('');
@@ -126,7 +142,7 @@ export default function OrdersPage() {
                 otp: otpCode,
             });
             setResult({ ok: true, msg: `✅ Sell order placed! ID: ${res.data.id} | Status: ${res.data.status}` });
-            setForm({ symbol: '', quantity: '', exchange: 'NSE', side: 'BUY', orderType: 'MARKET', pricePerUnit: '', triggerPrice: '' });
+            setForm({ symbol: '', quantity: '', exchange: 'NSE', side: 'BUY', orderType: 'MARKET', pricePerUnit: '', triggerPrice: '', targetPrice: '', stopLossPrice: '' });
             setLivePrice(null);
             setPendingOrder(null);
             fetchHistory();
@@ -152,6 +168,22 @@ export default function OrdersPage() {
         : '—';
 
     const fmt = n => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+    function validateBeforeReview() {
+        const quantity = Number(form.quantity);
+        const price = form.orderType === 'MARKET' ? Number(livePrice) : Number(form.triggerPrice || form.pricePerUnit);
+        if (!form.symbol.trim()) return 'Select a valid symbol.';
+        if (!Number.isInteger(quantity) || quantity <= 0) return 'Quantity must be a whole number greater than zero.';
+        if (!Number.isFinite(price) || price <= 0) return 'Enter a valid positive order price.';
+        if (form.orderType === 'BRACKET' && (!Number(form.targetPrice) || !Number(form.stopLossPrice))) {
+            return 'Bracket orders require target and stop-loss prices.';
+        }
+        if (form.side === 'SELL' && quantity > ownedQty) return `You only own ${ownedQty} shares.`;
+        if (form.side === 'BUY' && walletBalance !== null && price * quantity > walletBalance) {
+            return 'Insufficient wallet balance for this order.';
+        }
+        return null;
+    }
 
     return (
         <Layout title="Place Order">
@@ -267,6 +299,29 @@ export default function OrdersPage() {
                                 </div>
                             )}
 
+                            {form.orderType === 'STOP_LIMIT' && (
+                                <div className="form-group">
+                                    <label className="auth-label">Stop Trigger Price (₹)</label>
+                                    <input className="form-input" type="number" step="0.01" value={form.triggerPrice}
+                                        onChange={e => setForm(f => ({ ...f, triggerPrice: e.target.value }))} />
+                                </div>
+                            )}
+
+                            {form.orderType === 'BRACKET' && (
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="auth-label">Target Price (₹)</label>
+                                        <input className="form-input" type="number" step="0.01" value={form.targetPrice}
+                                            onChange={e => setForm(f => ({ ...f, targetPrice: e.target.value }))} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="auth-label">Stop-loss Price (₹)</label>
+                                        <input className="form-input" type="number" step="0.01" value={form.stopLossPrice}
+                                            onChange={e => setForm(f => ({ ...f, stopLossPrice: e.target.value }))} />
+                                    </div>
+                                </div>
+                            )}
+
                             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', marginTop: '1rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Estimated Capital Required</span>
@@ -344,7 +399,10 @@ export default function OrdersPage() {
                                     className={`btn btn-full ${form.side === 'BUY' ? 'btn-primary' : 'btn-red'}`}
                                     style={{ padding: '1rem', fontWeight: 800, fontSize: '1.1rem', marginTop: '1rem' }}
                                     onClick={() => {
-                                        if (hasInsufficientHoldings) {
+                                        const validationError = validateBeforeReview();
+                                        if (validationError) {
+                                            setResult({ ok: false, msg: `❌ ${validationError}` });
+                                        } else if (hasInsufficientHoldings) {
                                             setShowInsufficientModal(true);
                                         } else {
                                             setShowConfirm(true);
