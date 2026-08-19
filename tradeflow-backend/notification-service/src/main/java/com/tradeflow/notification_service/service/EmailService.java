@@ -42,6 +42,12 @@ public class EmailService {
     @Value("${spring.mail.from:no-reply@tradeflow.hbhanot.tech}")
     private String smtpFromEmail;
 
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
+    @Value("${spring.mail.password:}")
+    private String smtpPassword;
+
     public EmailService(TemplateEngine templateEngine, AuthClient authClient, JavaMailSender mailSender) {
         this.templateEngine = templateEngine;
         this.authClient = authClient;
@@ -49,13 +55,26 @@ public class EmailService {
     }
 
     private boolean sendEmail(String to, String subject, String htmlContent) {
+        if (smtpConfigured()) {
+            log.info("Using SMTP2GO to deliver email to {}", to);
+            if (sendEmailViaSmtp(to, subject, htmlContent)) {
+                return true;
+            }
+            log.warn("SMTP2GO delivery failed for {}. Falling back to SendGrid.", to);
+        }
+
         if (sendGridApiKey != null && !sendGridApiKey.isBlank()) {
             log.info("Using SendGrid to deliver email to {}", to);
             return sendEmailViaSendGrid(to, subject, htmlContent);
         }
 
-        log.info("Using SMTP to deliver email to {}", to);
-        return sendEmailViaSmtp(to, subject, htmlContent);
+        log.error("No working email provider is configured for {}", to);
+        return false;
+    }
+
+    private boolean smtpConfigured() {
+        return smtpUsername != null && !smtpUsername.isBlank()
+                && smtpPassword != null && !smtpPassword.isBlank();
     }
 
     private boolean sendEmailViaSmtp(String to, String subject, String htmlContent) {

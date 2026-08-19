@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import api from '../api/axios';
+import api, { SESSION_EXPIRED_EVENT } from '../api/axios';
 
 const AuthContext = createContext(null);
 
@@ -36,6 +36,12 @@ export function AuthProvider({ children }) {
             return null;
         }
     }, [token]);
+
+    useEffect(() => {
+        const handleSessionExpired = () => setToken(null);
+        window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+        return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    }, []);
 
     const login = useCallback((jwt) => {
         localStorage.setItem('tf_token', jwt);
