@@ -68,13 +68,20 @@ public class MarketService {
     }
 
     public BigDecimal getLivePrice(String symbol) {
-        String instrumentKey = resolveInstrumentKey(symbol);
         String cacheKey = CACHE_KEY_PREFIX + symbol.toUpperCase();
 
         // 1. Check Redis Cache first (Stay efficient!)
         Object cachedValue = redisTemplate.opsForValue().get(cacheKey);
         if (cachedValue != null) {
             return new BigDecimal(cachedValue.toString());
+        }
+
+        String instrumentKey;
+        try {
+            instrumentKey = resolveInstrumentKey(symbol);
+        } catch (ResponseStatusException e) {
+            log.warn("Instrument not found or Upstox token expired for {}. Falling back to mock.", symbol);
+            return getMockPrice(symbol);
         }
 
         // 2. Try fetching from Upstox
@@ -137,10 +144,20 @@ public class MarketService {
         if (symbols == null || symbols.isEmpty())
             return results;
 
-        // Map symbols to instrument keys
-        java.util.List<String> instrumentKeys = symbols.stream()
-                .map(this::resolveInstrumentKey)
-                .toList();
+        // Map symbols to instrument keys safely
+        java.util.List<String> instrumentKeys = new java.util.ArrayList<>();
+        for (String symbol : symbols) {
+            try {
+                instrumentKeys.add(resolveInstrumentKey(symbol));
+            } catch (ResponseStatusException e) {
+                // If it fails, add fallback mock price directly to results
+                results.put(symbol, getMockPrice(symbol));
+            }
+        }
+
+        if (instrumentKeys.isEmpty()) {
+            return results; // Everything fell back to mock
+        }
 
         // Join keys with commas for the Upstox API
         String joinedKeys = String.join(",", instrumentKeys);
