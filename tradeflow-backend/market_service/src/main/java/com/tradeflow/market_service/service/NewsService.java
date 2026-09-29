@@ -35,7 +35,7 @@ public class NewsService {
             // Secure XML parser against XXE vulnerabilities
             dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(new URL(rssUrl).openStream());
+            Document doc = db.parse(java.net.URI.create(rssUrl).toURL().openStream());
             doc.getDocumentElement().normalize();
             
             NodeList nodeList = doc.getElementsByTagName("item");

@@ -24,7 +24,7 @@ export default function RegisterPage() {
                 email: form.email,
                 password: form.password
             });
-            navigate('/login');
+            navigate('/login', { state: { message: 'Registration successful! Please log in to your new account.' } });
         } catch (err) {
             const data = err.response?.data;
             const message = typeof data === 'string' ? data : (data?.message || data?.error || 'Registration failed.');

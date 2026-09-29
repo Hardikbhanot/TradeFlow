@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +11,8 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
 
     async function handlePasswordSubmit(e) {
         e.preventDefault();
@@ -90,6 +92,7 @@ export default function LoginPage() {
                 </div>
 
                 {error && <div className="auth-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
+                {successMessage && <div className="auth-success" style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'rgba(46, 213, 115, 0.1)', color: '#2ed573', borderRadius: '8px', border: '1px solid rgba(46, 213, 115, 0.3)' }}>{successMessage}</div>}
 
                 {!otpStep ? (
                     <form className="auth-form" onSubmit={handlePasswordSubmit}>

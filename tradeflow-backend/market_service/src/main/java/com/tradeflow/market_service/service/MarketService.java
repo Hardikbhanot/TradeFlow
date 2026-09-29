@@ -110,8 +110,8 @@ public class MarketService {
                 JsonNode data = rootNode.get("data");
 
                 // Navigate to the first instrument in the response
-                if (data != null && data.fields().hasNext()) {
-                    JsonNode stockData = data.fields().next().getValue();
+                if (data != null && data.properties().iterator().hasNext()) {
+                    JsonNode stockData = data.properties().iterator().next().getValue();
                     BigDecimal price = stockData.get("last_price").decimalValue();
 
                     // Store in Redis for 5 seconds
@@ -177,9 +177,9 @@ public class MarketService {
 
                 if (data != null) {
                     // Iterate over all instruments returned
-                    java.util.Iterator<java.util.Map.Entry<String, JsonNode>> fields = data.fields();
-                    while (fields.hasNext()) {
-                        java.util.Map.Entry<String, JsonNode> field = fields.next();
+                    java.util.Iterator<java.util.Map.Entry<String, JsonNode>> properties = data.properties().iterator();
+                    while (properties.hasNext()) {
+                        java.util.Map.Entry<String, JsonNode> field = properties.next();
                         JsonNode stockData = field.getValue();
                         String mappedSymbol = stockData.get("symbol").asText();
                         BigDecimal price = stockData.get("last_price").decimalValue();
@@ -358,7 +358,16 @@ public class MarketService {
             case "RELIANCE", "NSE_EQ:RELIANCE" -> 2985.00;
             case "TCS", "NSE_EQ:TCS" -> 4120.00;
             case "INFY", "NSE_EQ:INFY" -> 1650.00;
+            case "HDFCBANK", "NSE_EQ:HDFCBANK" -> 1630.00;
+            case "ICICIBANK", "NSE_EQ:ICICIBANK" -> 1200.00;
+            case "WIPRO", "NSE_EQ:WIPRO" -> 480.00;
+            case "SBIN", "NSE_EQ:SBIN" -> 830.00;
+            case "BAJFINANCE", "NSE_EQ:BAJFINANCE" -> 7100.00;
+            case "ZOMATO", "NSE_EQ:ZOMATO" -> 190.00;
             case "BEL", "NSE_EQ:BEL" -> 210.00;
+            case "SUZLON", "NSE_EQ:SUZLON" -> 50.00;
+            case "TATASTEEL", "NSE_EQ:TATASTEEL" -> 160.00;
+            case "TATACHEM", "NSE_EQ:TATACHEM" -> 1100.00;
             default -> 1000.00;
         };
         return BigDecimal.valueOf(price);

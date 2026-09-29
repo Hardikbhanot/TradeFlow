@@ -15,6 +15,10 @@ const POPULAR = [
     { sym: 'WIPRO', name: 'Wipro' },
     { sym: 'SBIN', name: 'State Bank of India' },
     { sym: 'BAJFINANCE', name: 'Bajaj Finance' },
+    { sym: 'ZOMATO', name: 'Zomato Ltd' },
+    { sym: 'SUZLON', name: 'Suzlon Energy' },
+    { sym: 'TATASTEEL', name: 'Tata Steel' },
+    { sym: 'TATACHEM', name: 'Tata Chemicals' },
 ];
 
 const RANGE_OPTIONS = [

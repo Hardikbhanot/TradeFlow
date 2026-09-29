@@ -120,11 +120,12 @@ public class UpstoxInstrumentService {
      * and maps Every NSE Trading Symbol to its ISIN Instrument Key in Redis.
      */
     @EventListener(ApplicationReadyEvent.class)
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 6 * * *", zone = "Asia/Kolkata")
     public void fetchAndCacheInstruments() {
         log.info("🚀 Starting download of Upstox NSE Instruments CSV...");
 
         try {
-            URL url = new URL(CSV_URL);
+            java.net.URL url = java.net.URI.create(CSV_URL).toURL();
 
             // Unzip the .gz stream on the fly
             try (GZIPInputStream gzipInputStream = new GZIPInputStream(url.openStream());
