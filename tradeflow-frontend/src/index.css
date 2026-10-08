@@ -1531,6 +1531,15 @@ select {
   }
 }
 
+
+/* ── Orders Page Grid Layout ── */
+.orders-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 2fr;
+  gap: 2rem;
+  align-items: start;
+}
+
 /* Mobile Devices */
 @media (max-width: 768px) {
   .app-layout {
@@ -1587,10 +1596,8 @@ select {
   }
 }
 
-/* ── Orders Page Grid Layout ── */
-.orders-grid {
-  display: grid;
-  grid-template-columns: minmax(360px, 1fr) 2fr;
-  gap: 2rem;
-  align-items: start;
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

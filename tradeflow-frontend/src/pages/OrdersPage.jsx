@@ -189,7 +189,7 @@ export default function OrdersPage() {
         <Layout title="Place Order">
             <div className="page-header">
                 <h1>Execution Terminal</h1>
-                <p>Manage your funds and transaction history in premium style.</p>
+                <p>Execute and monitor your trades in real-time.</p>
             </div>
 
             <div className="orders-grid">
@@ -268,16 +268,16 @@ export default function OrdersPage() {
 
                             <div className="form-group">
                                 <label className="auth-label">Order Type</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                     {ORDER_TYPES.map(t => (
                                         <button 
                                             key={t}
                                             type="button"
                                             className={`btn ${form.orderType === t ? 'btn-primary-dim' : 'btn-ghost'}`}
-                                            style={{ flex: 1, fontSize: '0.7rem' }}
+                                            style={{ flex: '1 1 auto', fontSize: '0.7rem', padding: '6px 8px' }}
                                             onClick={() => setForm(f => ({ ...f, orderType: t }))}
                                         >
-                                            {t}
+                                            {t.replace('_', ' ')}
                                         </button>
                                     ))}
                                 </div>
