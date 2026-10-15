@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, CandlestickSeries } from 'lightweight-charts';
 
 export default function TradeDesk({ symbol = 'RELIANCE', exchange = 'NSE' }) {
     const chartContainerRef = useRef();
@@ -8,8 +8,6 @@ export default function TradeDesk({ symbol = 'RELIANCE', exchange = 'NSE' }) {
         if (!chartContainerRef.current) return;
 
         let chart;
-        // Introduce a minor delay to let the DOM paint and calculate layout dimensions correctly,
-        // preventing the lightweight-charts zero-width initialization bug in conditional rendering contexts.
         const timer = setTimeout(() => {
             const container = chartContainerRef.current;
             if (!container) return;
@@ -29,12 +27,12 @@ export default function TradeDesk({ symbol = 'RELIANCE', exchange = 'NSE' }) {
                 height: 500,
             });
 
-            const candlestickSeries = chart.addCandlestickSeries({
-                upColor: '#10B981',
-                downColor: '#FF4159',
+            const candlestickSeries = chart.addSeries(CandlestickSeries, {
+                upColor: '#22C55E',
+                downColor: '#EF4444',
                 borderVisible: false,
-                wickUpColor: '#10B981',
-                wickDownColor: '#FF4159',
+                wickUpColor: '#22C55E',
+                wickDownColor: '#EF4444',
             });
 
             // Mock historical data for KINETIC visualization

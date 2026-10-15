@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import StockChart from '../components/StockChart';
 import MarketNews from '../components/MarketNews';
-import EquityChart from '../components/EquityChart';
+import InteractiveHeroChart from '../components/InteractiveHeroChart';
 import HoldingsGrid from '../components/HoldingsGrid';
 import TradeDesk from '../components/TradeDesk';
 import MarketWatch from '../components/MarketWatch';
@@ -376,7 +376,11 @@ export default function DashboardPage() {
                                 <div className="value">{holdings.length}</div>
                             </div>
                         </div>
-                        <EquityChart currentValue={totalCurrent + (wallet?.balance ?? 0)} />
+                        <InteractiveHeroChart 
+                            currentValue={totalCurrent + (wallet?.balance ?? 0)} 
+                            holdings={holdings}
+                            prices={prices}
+                        />
                     </div>
 
                     <div className="dashboard-grid">

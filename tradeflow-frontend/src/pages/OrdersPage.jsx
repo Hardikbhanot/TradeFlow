@@ -251,6 +251,29 @@ export default function OrdersPage() {
                                     <label className="auth-label">Quantity</label>
                                     <input className="form-input" type="number" min="1" placeholder="0" value={form.quantity}
                                         onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+                                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                        {[10, 25, 50, 100].map(qty => (
+                                            <button
+                                                key={qty}
+                                                type="button"
+                                                className="btn btn-ghost"
+                                                style={{ padding: '2px 8px', fontSize: '0.68rem', borderRadius: '4px' }}
+                                                onClick={() => setForm(f => ({ ...f, quantity: (parseInt(f.quantity || '0', 10) + qty).toString() }))}
+                                            >
+                                                +{qty}
+                                            </button>
+                                        ))}
+                                        {form.side === 'SELL' && ownedQty > 0 && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost"
+                                                style={{ padding: '2px 8px', fontSize: '0.68rem', borderRadius: '4px', color: 'var(--primary)', borderColor: 'var(--primary-glow)' }}
+                                                onClick={() => setForm(f => ({ ...f, quantity: ownedQty.toString() }))}
+                                            >
+                                                MAX ({ownedQty})
+                                            </button>
+                                        )}
+                                    </div>
                                     {hasInsufficientHoldings && (
                                         <div style={{ color: 'var(--red)', fontSize: '0.78rem', fontWeight: 600, marginTop: '6px' }}>
                                             ⚠️ Insufficient holdings. You only own {ownedQty} shares.

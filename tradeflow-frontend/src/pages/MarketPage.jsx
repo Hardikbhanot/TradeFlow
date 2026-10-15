@@ -169,7 +169,7 @@ export default function MarketPage() {
                                 <Line 
                                     type="monotone" 
                                     dataKey="price" 
-                                    stroke={(chartData.length > 1 && chartData[chartData.length-1].price < chartData[0].price) ? 'var(--red)' : 'var(--primary)'} 
+                                    stroke={(chartData.length > 1 && chartData[chartData.length-1].price < chartData[0].price) ? 'var(--red)' : 'var(--green)'} 
                                     strokeWidth={3} 
                                     dot={false} 
                                     isAnimationActive={false} 
