@@ -4,21 +4,26 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { MOCK_HOLDINGS, MOCK_PRICES, MOCK_ANALYTICS } from '../mockData';
 
 export default function PortfolioPage() {
     const { user } = useAuth();
-    const [holdings, setHoldings] = useState([]);
-    const [prices, setPrices] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [analytics, setAnalytics] = useState(null);
+    const [holdings, setHoldings] = useState(MOCK_HOLDINGS);
+    const [prices, setPrices] = useState(MOCK_PRICES);
+    const [loading, setLoading] = useState(false);
+    const [analytics, setAnalytics] = useState(MOCK_ANALYTICS);
     const { marketData } = useWebSocket(user?.userId);
 
     const fetchHoldings = useCallback(async () => {
         try {
             const res = await api.get('/api/v1/portfolio');
-            setHoldings(res.data);
-        } catch (err) {
-            console.error('Failed to fetch holdings', err);
+            if (Array.isArray(res.data) && res.data.length > 0) {
+                setHoldings(res.data);
+            } else {
+                setHoldings(MOCK_HOLDINGS);
+            }
+        } catch {
+            setHoldings(MOCK_HOLDINGS);
         } finally {
             setLoading(false);
         }
@@ -29,9 +34,9 @@ export default function PortfolioPage() {
         try {
             const symbols = holdings.map(h => h.symbol).join(',');
             const res = await api.get('/api/v1/market/prices', { params: { symbols } });
-            setPrices(prev => ({ ...prev, ...res.data }));
-        } catch (error) {
-            console.error('Failed to fetch portfolio prices', error);
+            setPrices(prev => ({ ...MOCK_PRICES, ...prev, ...res.data }));
+        } catch {
+            setPrices(prev => ({ ...MOCK_PRICES, ...prev }));
         }
     }, [holdings]);
 
@@ -40,7 +45,13 @@ export default function PortfolioPage() {
     }, [fetchHoldings]);
 
     useEffect(() => {
-        api.get('/api/v1/portfolio/analytics').then(res => setAnalytics(res.data)).catch(() => {});
+        api.get('/api/v1/portfolio/analytics')
+            .then(res => {
+                if (res.data) setAnalytics(res.data);
+            })
+            .catch(() => {
+                setAnalytics(MOCK_ANALYTICS);
+            });
     }, [holdings]);
 
     useEffect(() => {

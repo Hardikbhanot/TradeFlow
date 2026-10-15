@@ -126,23 +126,16 @@ export default function Layout({ children, title }) {
             <aside className="sidebar">
                 <div className="sidebar-brand">
                     <div className="sidebar-title">
-                        <div 
+                        <img 
+                            src="/favicon.svg" 
+                            alt="TradeFlow Logo" 
                             style={{ 
                                 width: '30px', 
                                 height: '30px', 
                                 borderRadius: '8px', 
-                                background: 'linear-gradient(135deg, var(--primary) 0%, rgba(245, 158, 11, 0.4) 100%)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 900,
-                                fontSize: '1rem',
-                                color: '#000',
-                                boxShadow: '0 0 12px var(--primary-glow)'
-                            }}
-                        >
-                            TF
-                        </div>
+                                boxShadow: '0 0 12px var(--primary-glow)' 
+                            }} 
+                        />
                         <span>TRADEFLOW</span>
                     </div>
                     <div className="sidebar-subtitle">Terminal V2.0</div>
@@ -221,6 +214,11 @@ export default function Layout({ children, title }) {
                     </div>
                     
                     <div className="topbar-right">
+                        {localStorage.getItem('tf_demo_mode') === 'true' && (
+                            <div className="badge hide-mobile" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--primary)', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: '0.72rem', fontWeight: 700, padding: '4px 10px', borderRadius: '6px' }}>
+                                ⚡ DEMO MODE
+                            </div>
+                        )}
                         <div className="topbar-item hide-mobile">
                             <MarketStatus />
                         </div>

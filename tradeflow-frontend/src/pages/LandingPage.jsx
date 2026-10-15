@@ -6,7 +6,7 @@ export default function LandingPage() {
             {/* Top Navigation */}
             <nav className="landing-nav">
                 <div className="logo">
-                    <div className="logo-icon">TF</div>
+                    <img src="/favicon.svg" alt="TradeFlow Logo" style={{ width: '30px', height: '30px', borderRadius: '8px' }} />
                     <span>TRADEFLOW</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

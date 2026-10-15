@@ -41,7 +41,9 @@ api.interceptors.response.use(
     (res) => res,
     (err) => {
         if (err.response?.status === 401) {
+            if (localStorage.getItem('tf_demo_mode') !== 'true') {
                 expireSession();
+            }
         }
         return Promise.reject(err);
     }

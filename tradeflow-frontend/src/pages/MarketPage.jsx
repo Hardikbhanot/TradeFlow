@@ -5,6 +5,7 @@ import SymbolSearch from '../components/SymbolSearch';
 import api from '../api/axios';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
+import { MOCK_PRICES, generateMockHistory } from '../mockData';
 
 const POPULAR = [
     { sym: 'RELIANCE', name: 'Reliance Industries' },
@@ -21,6 +22,8 @@ const POPULAR = [
     { sym: 'TATACHEM', name: 'Tata Chemicals' },
 ];
 
+const DEFAULT_WATCHLIST = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'TATASTEEL'];
+
 const RANGE_OPTIONS = [
     { key: 'TODAY', label: 'Today' },
     { key: '30D', label: '30D' },
@@ -30,18 +33,18 @@ const RANGE_OPTIONS = [
 export default function MarketPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [prices, setPrices] = useState({});
+    const [prices, setPrices] = useState(MOCK_PRICES);
     const [selected, setSelected] = useState('RELIANCE');
-    const [chartData, setChartData] = useState([]);
+    const [chartData, setChartData] = useState(() => generateMockHistory('RELIANCE', 'TODAY'));
     const [chartRange, setChartRange] = useState('TODAY');
     const [chartLoading, setChartLoading] = useState(false);
-    const [watchlist, setWatchlist] = useState([]);
+    const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
 
     useEffect(() => {
         async function fetchWatchlist() {
             try {
                 const res = await api.get('/api/v1/watchlist');
-                if (Array.isArray(res.data)) {
+                if (Array.isArray(res.data) && res.data.length > 0) {
                     setWatchlist(res.data);
                 }
             } catch {}
@@ -63,15 +66,19 @@ export default function MarketPage() {
                 const res = await api.get('/api/v1/market/prices', {
                     params: { symbols: allSymbols.join(',') },
                 });
-                const next = {};
+                const next = { ...MOCK_PRICES };
                 allSymbols.forEach((sym) => {
-                    next[sym] = res.data?.[sym] == null ? null : Number(res.data[sym]);
+                    if (res.data?.[sym] != null) {
+                        next[sym] = Number(res.data[sym]);
+                    }
                 });
                 setPrices(next);
-            } catch {}
+            } catch {
+                setPrices(prev => ({ ...MOCK_PRICES, ...prev }));
+            }
         }
         fetchAllPrices();
-        const id = setInterval(fetchAllPrices, 2000);
+        const id = setInterval(fetchAllPrices, 4000);
         return () => clearInterval(id);
     }, [allSymbols]);
 
@@ -84,9 +91,13 @@ export default function MarketPage() {
                     params: { range: chartRange },
                 });
                 if (cancelled) return;
-                setChartData(Array.isArray(res.data) ? res.data : []);
+                if (Array.isArray(res.data) && res.data.length > 0) {
+                    setChartData(res.data);
+                } else {
+                    setChartData(generateMockHistory(selected, chartRange));
+                }
             } catch {
-                if (!cancelled) setChartData([]);
+                if (!cancelled) setChartData(generateMockHistory(selected, chartRange));
             } finally {
                 if (!cancelled) setChartLoading(false);
             }
@@ -98,9 +109,9 @@ export default function MarketPage() {
     async function handleSearchSelect(symbol) {
         const normalized = String(symbol).toUpperCase();
         if (!watchlist.includes(normalized)) {
+            setWatchlist((w) => [...w, normalized]);
             try {
                 await api.post(`/api/v1/watchlist/${normalized}`);
-                setWatchlist((w) => [...w, normalized]);
             } catch {}
         }
         setSelected(normalized);
@@ -108,10 +119,13 @@ export default function MarketPage() {
 
     async function removeWatchlist(e, symbol) {
         e.stopPropagation();
+        setWatchlist((w) => w.filter((s) => s !== symbol));
+        if (selected === symbol) {
+            const remaining = watchlist.filter((s) => s !== symbol);
+            setSelected(remaining[0] || 'RELIANCE');
+        }
         try {
             await api.delete(`/api/v1/watchlist/${symbol}`);
-            setWatchlist((w) => w.filter((s) => s !== symbol));
-            if (selected === symbol) setSelected(watchlist[0] || 'RELIANCE');
         } catch {}
     }
 

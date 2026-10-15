@@ -81,14 +81,30 @@ export default function LoginPage() {
         }
     }
 
+    function handleDemoLogin() {
+        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/=/g, '');
+        const payload = btoa(JSON.stringify({
+            userId: 1,
+            username: 'Hardik (Trader)',
+            email: 'trader@tradeflow.io',
+            exp: Math.floor(Date.now() / 1000) + 86400 * 30
+        })).replace(/=/g, '');
+        const demoToken = `${header}.${payload}.demo_signature`;
+
+        localStorage.setItem('tf_demo_mode', 'true');
+        login(demoToken);
+        navigate('/dashboard');
+    }
+
     return (
         <div className="auth-container">
             <div className="auth-card-v2">
-                <div className="auth-logo-large">
-                    <span style={{ color: 'var(--primary)' }}>▲</span> TradeFlow
+                <div className="auth-logo-large" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                    <img src="/favicon.svg" alt="TradeFlow Logo" style={{ width: '36px', height: '36px', borderRadius: '10px' }} />
+                    <span>TradeFlow</span>
                 </div>
                 <div className="auth-subtitle-v2">
-                    {otpStep ? 'Enter the 6-digit code sent to your email.' : 'Welcome back. Sign in to your account.'}
+                    {otpStep ? 'Enter the 6-digit code sent to your email.' : 'Welcome back. Sign in to your trading terminal.'}
                 </div>
 
                 {error && <div className="auth-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
@@ -162,6 +178,41 @@ export default function LoginPage() {
                         </button>
                     </form>
                 )}
+
+                <div style={{ marginTop: '1.75rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+                            OR TEST OFFLINE
+                        </span>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                    </div>
+
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{
+                            width: '100%',
+                            padding: '0.85rem 1rem',
+                            border: '1px solid var(--border2)',
+                            background: 'var(--surface2)',
+                            color: 'var(--primary)',
+                            fontWeight: 700,
+                            fontSize: '0.88rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                        }}
+                        onClick={handleDemoLogin}
+                    >
+                        <span>⚡</span> Explore Demo Mode (No Backend Needed)
+                    </button>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '6px' }}>
+                        Immediate access to test the redesigned Dashboard, Charts, and Terminal.
+                    </div>
+                </div>
 
                 <div className="auth-footer">
                     Don't have an account? <Link to="/register">Create one</Link>
