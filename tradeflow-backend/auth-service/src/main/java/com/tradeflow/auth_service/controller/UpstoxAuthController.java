@@ -55,18 +55,33 @@ public class UpstoxAuthController {
      */
     @GetMapping("/login-url")
     public ResponseEntity<Map<String, String>> getUpstoxLoginUrl() {
+        String state = java.util.UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set("oauth_state:" + state, "active", Duration.ofMinutes(10));
+
         String url = "https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id="
-                + apiKey + "&redirect_uri=" + redirectUri;
-        log.info("Generating Upstox OAuth Login URL: {}", url);
-        return ResponseEntity.ok(Map.of("url", url));
+                + apiKey + "&redirect_uri=" + redirectUri + "&state=" + state;
+        log.info("Generating Upstox OAuth Login URL with CSRF state protection: {}", url);
+        return ResponseEntity.ok(Map.of("url", url, "state", state));
     }
 
     /**
      * Handles the redirect from Upstox after the user logs in.
      */
     @GetMapping("/callback")
-    public ResponseEntity<?> handleCallback(@RequestParam String code) {
-        log.info("📥 Received Upstox Auth Code. Attempting token exchange...");
+    public ResponseEntity<?> handleCallback(
+            @RequestParam String code,
+            @RequestParam(required = false) String state) {
+        log.info("📥 Received Upstox Auth Code. Validating CSRF state and attempting token exchange...");
+
+        if (state != null) {
+            String stateKey = "oauth_state:" + state;
+            if (!Boolean.TRUE.equals(redisTemplate.hasKey(stateKey))) {
+                log.warn("🚨 Upstox OAuth CSRF State Mismatch or Expired: {}", state);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Invalid or expired OAuth state parameter. Please try connecting your broker again.");
+            }
+            redisTemplate.delete(stateKey);
+        }
 
         try {
             String tokenUrl = "https://api.upstox.com/v2/login/authorization/token";

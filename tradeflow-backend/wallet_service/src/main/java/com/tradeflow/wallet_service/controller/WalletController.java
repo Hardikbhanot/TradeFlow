@@ -32,11 +32,14 @@ public class WalletController {
     private LedgerService ledgerService;
 
     @PostMapping("/create")
-    public Wallet createWallet(@RequestBody Map<String, Object> payload) {
-        Wallet wallet = new Wallet();
-        wallet.setUserId(Long.valueOf(payload.get("userId").toString()));
-        wallet.setBalance(new BigDecimal(payload.get("balance").toString()));
-        return walletRepository.save(wallet);
+    public ResponseEntity<Wallet> createWallet(@RequestBody Map<String, Object> payload) {
+        if (payload == null || !payload.containsKey("userId")) {
+            return ResponseEntity.badRequest().build();
+        }
+        Long targetUserId = Long.valueOf(payload.get("userId").toString());
+        // Always initialize new wallets with zero balance to prevent arbitrary balance injection
+        Wallet wallet = walletService.getOrCreateWallet(targetUserId);
+        return ResponseEntity.ok(wallet);
     }
 
     @GetMapping
@@ -49,6 +52,10 @@ public class WalletController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestParam BigDecimal amount) {
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return ResponseEntity.badRequest().body("Deposit amount must be strictly greater than zero.");
+        }
 
         if (idempotencyKey != null) {
             Optional<String> existingResponse = idempotencyService.getResponse(idempotencyKey);
@@ -66,19 +73,24 @@ public class WalletController {
         return ResponseEntity.ok(updatedWallet);
     }
 
-    @GetMapping("/all")
-    public List<Wallet> getAllWallets() {
-        return walletRepository.findAll();
-    }
-
     @GetMapping("/user/{userId}")
-    public Wallet getWalletByUserId(@PathVariable Long userId) {
-        return walletService.getOrCreateWallet(userId);
+    public ResponseEntity<Wallet> getWalletByUserId(
+            @PathVariable Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long authenticatedUserId) {
+        if (authenticatedUserId != null && !authenticatedUserId.equals(userId)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(walletService.getOrCreateWallet(userId));
     }
 
     @GetMapping("/user/{userId}/balance")
-    public BigDecimal getBalance(@PathVariable Long userId) {
-        return walletService.getOrCreateWallet(userId).getBalance();
+    public ResponseEntity<BigDecimal> getBalance(
+            @PathVariable Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long authenticatedUserId) {
+        if (authenticatedUserId != null && !authenticatedUserId.equals(userId)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(walletService.getOrCreateWallet(userId).getBalance());
     }
 
     /**

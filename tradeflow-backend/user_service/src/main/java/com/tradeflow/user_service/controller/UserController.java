@@ -34,9 +34,11 @@ public class UserController {
         return savedUser;
     }
 
-    // check db connection
-    @GetMapping("/all")
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    // Get current authenticated user's profile
+    @GetMapping("/me")
+    public org.springframework.http.ResponseEntity<User> getProfile(@RequestHeader("X-User-Id") Long userId) {
+        return userRepository.findById(userId)
+                .map(org.springframework.http.ResponseEntity::ok)
+                .orElse(org.springframework.http.ResponseEntity.notFound().build());
     }
 }

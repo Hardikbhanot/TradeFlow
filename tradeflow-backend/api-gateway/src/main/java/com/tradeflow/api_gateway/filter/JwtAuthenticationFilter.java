@@ -31,6 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public JwtAuthenticationFilter(
             @Value("${jwt.secret:TradeFlowSuperSecretKeyForJwtAuthentication2026!}") String secretKeyString,
             StringRedisTemplate redisTemplate) {
+        if (secretKeyString == null || secretKeyString.trim().length() < 32) {
+            throw new IllegalArgumentException("JWT secret key must be at least 256 bits (32 characters) long.");
+        }
         this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
         this.redisTemplate = redisTemplate;
     }
@@ -44,16 +47,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final List<String> apiEndpointsToBeIgnored = List.of(
-                "/auth/", 
+        String rawPath = request.getRequestURI();
+        // Normalize path
+        String normalizedPath = rawPath.replaceAll("/+", "/");
+        if (normalizedPath.length() > 1 && normalizedPath.endsWith("/")) {
+            normalizedPath = normalizedPath.substring(0, normalizedPath.length() - 1);
+        }
+
+        final List<String> publicPathPrefixes = List.of(
+                "/auth",
                 "/api/v1/market/ws",
                 "/eureka",
-                "/actuator/");
+                "/actuator"
+        );
 
-        boolean isApiSecured = apiEndpointsToBeIgnored.stream()
-                .noneMatch(uri -> request.getRequestURI().contains(uri));
+        final String pathToCheck = normalizedPath;
+        boolean isPublicEndpoint = publicPathPrefixes.stream().anyMatch(prefix ->
+                pathToCheck.equals(prefix) || pathToCheck.startsWith(prefix + "/"));
 
-        if (isApiSecured) {
+        if (!isPublicEndpoint) {
             String token = request.getHeader("Authorization");
 
             if (token == null) {
@@ -66,7 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            final String jwtToken = token.substring(7);
+            final String jwtToken = token.substring(7).trim();
 
             // Check if token is blacklisted in Redis
             String redisKey = "jwt_blacklist:" + jwtToken;
@@ -85,16 +97,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 userId = claims.getSubject();
 
-                // 🔥 Phase 5 Part 2: Gateway Security Sub-Filter 🔥
-                // Ensure users cannot access other users' specific path resources
-                String path = request.getRequestURI();
-                if (path.matches(".*/portfolio/\\d+") || path.matches(".*/wallets/user/\\d+")) {
-                    String[] pathSegments = path.split("/");
-                    String resourceId = pathSegments[pathSegments.length - 1];
+                // Block bulk export endpoints from direct client access
+                if (pathToCheck.equals("/api/v1/wallets/all") || pathToCheck.equals("/api/v1/users/all")) {
+                    onForbidden(response, "Bulk enumeration endpoints are restricted from public API access.");
+                    return;
+                }
 
+                // IDOR Protection: Prevent users from requesting other users' resources
+                java.util.regex.Pattern walletUserPattern = java.util.regex.Pattern.compile(".*/wallets/user/(\\d+)(/.*)?");
+                java.util.regex.Matcher walletMatcher = walletUserPattern.matcher(pathToCheck);
+                if (walletMatcher.matches()) {
+                    String resourceId = walletMatcher.group(1);
                     if (!resourceId.equals(userId)) {
-                        onError(response,
-                                "JWT Subject mismatch: You are not authorized to access resource ID " + resourceId);
+                        onForbidden(response, "JWT Subject mismatch: You are not authorized to access resource ID " + resourceId);
+                        return;
+                    }
+                }
+
+                java.util.regex.Pattern portfolioPattern = java.util.regex.Pattern.compile(".*/portfolio/(\\d+)(/.*)?");
+                java.util.regex.Matcher portfolioMatcher = portfolioPattern.matcher(pathToCheck);
+                if (portfolioMatcher.matches()) {
+                    String resourceId = portfolioMatcher.group(1);
+                    if (!resourceId.equals(userId)) {
+                        onForbidden(response, "JWT Subject mismatch: You are not authorized to access resource ID " + resourceId);
                         return;
                     }
                 }
@@ -106,7 +131,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             final String userIdFinal = userId;
 
-            // Create a request wrapper to add the X-User-Id header dynamically
+            // Strip any incoming client X-User-Id header and inject the verified JWT userId
             HttpServletRequestWrapper modifiedRequest = new HttpServletRequestWrapper(request) {
                 @Override
                 public String getHeader(String name) {
@@ -127,18 +152,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 @Override
                 public Enumeration<String> getHeaderNames() {
                     List<String> names = Collections.list(super.getHeaderNames());
+                    names.removeIf(n -> "X-User-Id".equalsIgnoreCase(n));
                     names.add("X-User-Id");
                     return Collections.enumeration(names);
                 }
             };
 
-            System.out.println(
-                    "✅ JWT Validated successfully for UserId: " + userIdFinal + ". Forwarding request downstream.");
             filterChain.doFilter(modifiedRequest, response);
             return;
         }
 
-        System.out.println("⚠️ Bypassing JWT Check for public endpoint: " + request.getRequestURI());
         filterChain.doFilter(request, response);
     }
 
@@ -147,5 +170,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json");
         response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + err + "\"}");
+    }
+
+    private void onForbidden(HttpServletResponse response, String err) throws IOException {
+        System.err.println("🚨 Forbidden Access! " + err);
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"" + err + "\"}");
     }
 }

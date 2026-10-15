@@ -20,6 +20,9 @@ public class JwtUtil {
     private static final long EXPIRATION_TIME = 1800000;
 
     public JwtUtil(@org.springframework.beans.factory.annotation.Value("${jwt.secret:TradeFlowSuperSecretKeyForJwtAuthentication2026!}") String secretKeyString) {
+        if (secretKeyString == null || secretKeyString.trim().length() < 32) {
+            throw new IllegalArgumentException("JWT secret key must be at least 256 bits (32 characters) long.");
+        }
         this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
     }
 

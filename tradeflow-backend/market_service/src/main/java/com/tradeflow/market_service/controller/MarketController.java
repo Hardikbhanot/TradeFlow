@@ -66,9 +66,19 @@ public class MarketController {
     }
 
     @GetMapping("/upstox/callback")
-    public String handleUpstoxCallback(@RequestParam("code") String code) {
+    public org.springframework.http.ResponseEntity<Map<String, Object>> handleUpstoxCallback(@RequestParam("code") String code) {
         String token = upStoxAuthService.getAccessToken(code);
-        return token != null ? "Token successfully generated: " + token : "Failed to generate Upstox token.";
+        if (token != null) {
+            return org.springframework.http.ResponseEntity.ok(Map.of(
+                    "status", "SUCCESS",
+                    "message", "Broker authentication token generated and stored securely."
+            ));
+        } else {
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(Map.of(
+                    "status", "FAILED",
+                    "message", "Failed to generate Upstox broker token."
+            ));
+        }
     }
 
     @GetMapping("/data/{symbol}")

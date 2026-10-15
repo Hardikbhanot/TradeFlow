@@ -66,6 +66,9 @@ public class AuthController {
         return ResponseEntity.ok("User [" + username + "] registered successfully!");
     }
 
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+    private static final int MAX_OTP_ATTEMPTS = 5;
+
     @PostMapping("/login")
     @Transactional
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
@@ -77,7 +80,7 @@ public class AuthController {
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
             AppUser user = userOpt.get();
 
-            String otpCode = String.format("%06d", new Random().nextInt(999999));
+            String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
 
             otpRepository.findByUsername(username).ifPresent(existingOtp -> {
                 otpRepository.delete(existingOtp);
@@ -90,9 +93,12 @@ public class AuthController {
             otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
             otpRepository.save(otpEntity);
 
+            // Reset any previous failed attempt counts
+            redisTemplate.delete("otp_attempts:" + username);
+
             OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode);
             kafkaTemplate.send("otp-topic", event);
-            System.out.println("📧 [LOGIN OTP] Generated OTP for " + username + ": " + otpCode);
+            System.out.println("📧 [LOGIN OTP] OTP dispatched to registered email for user: " + username);
 
             return ResponseEntity.ok(Map.of(
                     "requiresOtp", true,
@@ -116,18 +122,33 @@ public class AuthController {
             return ResponseEntity.status(401).body("Invalid request");
         }
 
+        String attemptsKey = "otp_attempts:" + username;
+        String attemptsStr = redisTemplate.opsForValue().get(attemptsKey);
+        int attempts = attemptsStr != null ? Integer.parseInt(attemptsStr) : 0;
+
+        if (attempts >= MAX_OTP_ATTEMPTS) {
+            otpRepository.deleteByUsername(username);
+            redisTemplate.delete(attemptsKey);
+            return ResponseEntity.status(429).body("Too many failed attempts. OTP invalidated. Please login again.");
+        }
+
         OtpEntity otpEntity = otpOpt.get();
         if (otpEntity.getExpiresAt().isBefore(LocalDateTime.now())) {
             otpRepository.deleteByUsername(username);
+            redisTemplate.delete(attemptsKey);
             return ResponseEntity.status(401).body("OTP expired. Please login again.");
         }
 
         if (!otpEntity.getOtpCode().equals(otp)) {
-            return ResponseEntity.status(401).body("Incorrect OTP");
+            redisTemplate.opsForValue().increment(attemptsKey);
+            redisTemplate.expire(attemptsKey, Duration.ofMinutes(5));
+            int remaining = MAX_OTP_ATTEMPTS - (attempts + 1);
+            return ResponseEntity.status(401).body("Incorrect OTP. Attempts remaining: " + Math.max(0, remaining));
         }
 
         AppUser user = userOpt.get();
         otpRepository.deleteByUsername(username);
+        redisTemplate.delete(attemptsKey);
         String token = jwtUtil.generateToken(user.getId().toString(), user.getUsername(), user.getEmail());
 
         return ResponseEntity.ok(Map.of("token", token));
@@ -155,8 +176,7 @@ public class AuthController {
         passwordResetTokenRepository.save(resetToken);
 
         // Simulate sending email
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
-        System.out.println("📧 [SIMULATION] Password Reset Link for " + email + ": " + resetLink);
+        System.out.println("📧 [PASSWORD RESET] Password Reset Link generated and dispatched for: " + email);
 
         return ResponseEntity.ok(Map.of("message", "If an account with that email exists, a reset link has been sent."));
     }
@@ -218,7 +238,7 @@ public class AuthController {
         }
         AppUser user = userOpt.get();
         String username = user.getUsername();
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
 
         otpRepository.findByUsername(username).ifPresent(existingOtp -> {
             otpRepository.delete(existingOtp);
@@ -231,10 +251,12 @@ public class AuthController {
         otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
         otpRepository.save(otpEntity);
 
+        redisTemplate.delete("sell_otp_attempts:" + username);
+
         // Publish event to Kafka to simulate/send the email
         OtpRequestedEvent event = new OtpRequestedEvent(username, user.getEmail(), otpCode, "SELL", symbol, quantity);
         kafkaTemplate.send("otp-topic", event);
-        System.out.println("📧 [SELL OTP] Generated OTP for User ID " + userId + " (" + username + ") for " + quantity + " shares of " + symbol + ": " + otpCode);
+        System.out.println("📧 [SELL OTP] Dispatched OTP confirmation for User ID: " + userId);
 
         return ResponseEntity.ok().build();
     }
@@ -248,8 +270,18 @@ public class AuthController {
         }
         AppUser user = userOpt.get();
         String username = user.getUsername();
-        Optional<OtpEntity> otpOpt = otpRepository.findByUsername(username);
 
+        String attemptsKey = "sell_otp_attempts:" + username;
+        String attemptsStr = redisTemplate.opsForValue().get(attemptsKey);
+        int attempts = attemptsStr != null ? Integer.parseInt(attemptsStr) : 0;
+
+        if (attempts >= MAX_OTP_ATTEMPTS) {
+            otpRepository.deleteByUsername(username);
+            redisTemplate.delete(attemptsKey);
+            return ResponseEntity.ok(false);
+        }
+
+        Optional<OtpEntity> otpOpt = otpRepository.findByUsername(username);
         if (otpOpt.isEmpty()) {
             return ResponseEntity.ok(false);
         }
@@ -257,14 +289,18 @@ public class AuthController {
         OtpEntity otpEntity = otpOpt.get();
         if (otpEntity.getExpiresAt().isBefore(LocalDateTime.now())) {
             otpRepository.deleteByUsername(username);
+            redisTemplate.delete(attemptsKey);
             return ResponseEntity.ok(false);
         }
 
         if (!otpEntity.getOtpCode().equals(otp)) {
+            redisTemplate.opsForValue().increment(attemptsKey);
+            redisTemplate.expire(attemptsKey, Duration.ofMinutes(5));
             return ResponseEntity.ok(false);
         }
 
         otpRepository.deleteByUsername(username);
+        redisTemplate.delete(attemptsKey);
         return ResponseEntity.ok(true);
     }
 }

@@ -34,6 +34,10 @@ public class WalletService {
 
     @Transactional
     public Wallet addMoney(Long userId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be strictly positive.");
+        }
+
         // 1. Fetch or Create Wallet
         Wallet wallet = getOrCreateWallet(userId);
 
@@ -58,6 +62,10 @@ public class WalletService {
 
     @Transactional
     public boolean reserveFunds(Long userId, BigDecimal amount, Long orderId) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Reservation amount must be strictly positive.");
+        }
+
         Wallet wallet = getOrCreateWallet(userId);
 
         if (wallet.getBalance().compareTo(amount) >= 0) {
