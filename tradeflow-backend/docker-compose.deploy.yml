@@ -7,19 +7,6 @@ services:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
     restart: always
 
-  postgres:
-    image: postgres:15-alpine
-    container_name: tradeflow-postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-tradeflow_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-tradeflow_auth_db}
-    expose:
-      - "5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: always
-
   api-gateway:
     image: ghcr.io/hardikbhanot/tradeflow/api-gateway:latest
     ports: ["8080:8080"]
@@ -34,7 +21,7 @@ services:
 
   auth-service:
     image: ghcr.io/hardikbhanot/tradeflow/auth-service:latest
-    depends_on: [discovery-server, redis, postgres]
+    depends_on: [discovery-server, redis]
     env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx256m -Xms200m
@@ -46,7 +33,7 @@ services:
 
   user-service:
     image: ghcr.io/hardikbhanot/tradeflow/user_service:latest
-    depends_on: [discovery-server, postgres]
+    depends_on: [discovery-server]
     env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
@@ -55,7 +42,7 @@ services:
 
   wallet-service:
     image: ghcr.io/hardikbhanot/tradeflow/wallet_service:latest
-    depends_on: [discovery-server, postgres]
+    depends_on: [discovery-server]
     env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
@@ -65,7 +52,7 @@ services:
 
   market-service:
     image: ghcr.io/hardikbhanot/tradeflow/market_service:latest
-    depends_on: [discovery-server, kafka, redis, postgres]
+    depends_on: [discovery-server, kafka, redis]
     env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx256m -Xms200m
@@ -77,7 +64,7 @@ services:
 
   portfolio-service:
     image: ghcr.io/hardikbhanot/tradeflow/portfolio_service:latest
-    depends_on: [discovery-server, kafka, redis, postgres]
+    depends_on: [discovery-server, kafka, redis]
     env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx200m -Xms150m
@@ -91,7 +78,7 @@ services:
 
   order-service:
     image: ghcr.io/hardikbhanot/tradeflow/order_service:latest
-    depends_on: [discovery-server, kafka, postgres]
+    depends_on: [discovery-server, kafka]
     env_file: .env
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseSerialGC -Xmx150m -Xms150m
@@ -155,4 +142,8 @@ services:
 volumes:
   prometheus-data:
   grafana-data:
-  postgres-data:
+
+networks:
+  default:
+    name: app-net
+    external: true

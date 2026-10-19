@@ -85,4 +85,9 @@ public class MarketController {
     public Map<String, Object> getExtendedData(@PathVariable String symbol) {
         return marketService.getExtendedPriceData(symbol);
     }
+
+    @GetMapping("/depth/{symbol}")
+    public Map<String, Object> getMarketDepth(@PathVariable String symbol) {
+        return marketService.getMarketDepth(symbol);
+    }
 }

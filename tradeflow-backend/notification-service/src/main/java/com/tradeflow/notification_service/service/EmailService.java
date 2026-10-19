@@ -183,7 +183,7 @@ public class EmailService {
             context.setVariable("message", "We received a request to place a SELL order for " + event.getQuantity() + " shares of " + event.getSymbol() + ". Use the code below to securely authorize this transaction:");
             context.setVariable("warning", "If you did not initiate this stock transaction, please secure your account immediately.");
         } else {
-            subject = "Your TradeFlow Login Code: " + event.getOtpCode();
+            subject = "Your TradeFlow verification code: " + event.getOtpCode();
             context.setVariable("title", "Sign In Verification");
             context.setVariable("message", "We received a request to log in to your TradeFlow account. Use the code below to securely verify your identity:");
             context.setVariable("warning", "If you did not request this login, please change your password immediately or contact support.");

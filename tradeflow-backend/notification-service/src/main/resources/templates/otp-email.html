@@ -1,30 +1,237 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <title>TradeFlow Verification Code</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td { font-family: Arial, Helvetica, sans-serif !important; }
+    </style>
+    <![endif]-->
     <style>
-        body { font-family: 'Inter', Arial, sans-serif; background-color: #0a0e1a; color: #f9fafb; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 30px; text-align: center; }
-        .logo { color: #10b981; font-weight: bold; font-size: 24px; margin-bottom: 20px; }
-        .otp-box { background-color: #1a2234; border: 2px dashed #3b82f6; border-radius: 8px; padding: 15px; margin: 25px 0; display: inline-block; }
-        .otp-code { font-size: 36px; font-weight: 800; color: #3b82f6; letter-spacing: 4px; margin: 0; }
-        .text { color: #d1d5db; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
-        .warning { font-size: 13px; color: #ef4444; margin-top: 30px; }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #334155;
+        }
+        table {
+            border-spacing: 0;
+            border-collapse: collapse;
+        }
+        td {
+            padding: 0;
+        }
+        img {
+            border: 0;
+        }
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f1f5f9;
+            padding: 40px 16px;
+        }
+        .main-card {
+            background-color: #ffffff;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 520px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        .header {
+            padding: 32px 36px 20px 36px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .brand-logo {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .brand-accent {
+            color: #10b981;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #ecfdf5;
+            color: #059669;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            border: 1px solid #a7f3d0;
+            float: right;
+            margin-top: 2px;
+        }
+        .content {
+            padding: 36px 36px 28px 36px;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 12px 0;
+            letter-spacing: -0.3px;
+        }
+        .message {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #475569;
+            margin: 0 0 28px 0;
+        }
+        .otp-container {
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            margin: 0 0 28px 0;
+        }
+        .otp-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 0 0 8px 0;
+        }
+        .otp-code {
+            font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 8px;
+            color: #0f172a;
+            margin: 0;
+            padding: 4px 0 0 8px;
+            user-select: all;
+            -webkit-user-select: all;
+        }
+        .otp-expiry {
+            font-size: 12px;
+            color: #64748b;
+            margin: 10px 0 0 0;
+            display: block;
+        }
+        .security-box {
+            background-color: #f8fafc;
+            border-left: 3px solid #10b981;
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 0 0 24px 0;
+        }
+        .security-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #475569;
+            margin: 0;
+        }
+        .warning-text {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #94a3b8;
+            margin: 0;
+        }
+        .footer {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 24px 36px;
+            text-align: center;
+        }
+        .footer-text {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #94a3b8;
+            margin: 0 0 6px 0;
+        }
+        .footer-links a {
+            color: #64748b;
+            text-decoration: underline;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">▲ TradeFlow</div>
-        <h2 th:text="${title}">Sign In Verification</h2>
-        <p class="text">Hello <strong th:text="${username}">Trader</strong>,</p>
-        <p class="text" th:text="${message}">We received a request to log in to your TradeFlow account. Use the code below to securely verify your identity:</p>
-        
-        <div class="otp-box">
-            <p class="otp-code" th:text="${otpCode}">123456</p>
-        </div>
-        
-        <p class="text" style="font-size: 13px; color: #6b7280;">This code will expire in 5 minutes.</p>
-        
-        <p class="warning" th:text="${warning}">If you did not request this login, please change your password immediately or contact support.</p>
+    <!-- Preheader: Key for Apple Mail, Gmail, Android to detect OTP and show the top "Copy Code" button -->
+    <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;">
+        Your verification code is <th:block th:text="${otpCode}">123456</th:block>. Valid for 5 minutes.
     </div>
+
+    <center class="wrapper">
+        <table class="main-card" role="presentation" width="100%">
+            <!-- Header -->
+            <tr>
+                <td class="header">
+                    <table width="100%" role="presentation">
+                        <tr>
+                            <td>
+                                <span class="brand-logo">
+                                    <span class="brand-accent">▲</span> TradeFlow
+                                </span>
+                            </td>
+                            <td align="right">
+                                <span class="badge">Security Code</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+                <td class="content">
+                    <h1 class="title" th:text="${title}">Sign In Verification</h1>
+                    <p class="message">
+                        Hello <strong style="color: #0f172a;" th:text="${username}">Trader</strong>,<br>
+                        <span th:text="${message}">We received a request to verify your identity. Use the authorization code below:</span>
+                    </p>
+
+                    <!-- Prominent OTP Code Box (Easy to tap, select & copy) -->
+                    <div class="otp-container">
+                        <p class="otp-label">One-Time Password (OTP)</p>
+                        <p class="otp-code" id="otp-code" th:text="${otpCode}">123456</p>
+                        <span class="otp-expiry">⏱ This code expires in <strong>5 minutes</strong></span>
+                    </div>
+
+                    <!-- Security Notice -->
+                    <div class="security-box">
+                        <p class="security-text">
+                            <strong>Security Tip:</strong> Never share this code with anyone. TradeFlow employees will never ask for your password or verification codes.
+                        </p>
+                    </div>
+
+                    <p class="warning-text" th:text="${warning}">
+                        If you did not initiate this request, someone may be trying to access your account. Please change your password immediately.
+                    </p>
+                </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+                <td class="footer">
+                    <p class="footer-text">
+                        © 2026 TradeFlow Technologies Ltd. All rights reserved.
+                    </p>
+                    <p class="footer-text">
+                        Automated security notification sent to your registered email address.
+                    </p>
+                    <p class="footer-links">
+                        <a href="https://tradeflow.hbhanot.tech">Trading Platform</a> &bull;
+                        <a href="https://api.tradeflow.hbhanot.tech">API Gateway</a>
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </center>
 </body>
 </html>

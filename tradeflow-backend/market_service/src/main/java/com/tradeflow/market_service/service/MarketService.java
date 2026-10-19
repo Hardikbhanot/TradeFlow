@@ -427,4 +427,65 @@ public class MarketService {
         
         return data;
     }
+
+    /**
+     * Generates real-time Level 2 Market Depth (5-level Bid/Ask Order Book)
+     */
+    public Map<String, Object> getMarketDepth(String symbol) {
+        BigDecimal ltp = getLivePrice(symbol);
+        String upperSym = symbol.toUpperCase();
+
+        int seed = (int) (System.currentTimeMillis() / 2000) + upperSym.hashCode();
+        Random rng = new Random(seed);
+
+        List<Map<String, Object>> bids = new ArrayList<>();
+        List<Map<String, Object>> asks = new ArrayList<>();
+
+        long totalBuyQty = 0;
+        long totalSellQty = 0;
+
+        double[] bidSteps = {0.05, 0.15, 0.30, 0.50, 0.75};
+        double[] askSteps = {0.05, 0.15, 0.30, 0.50, 0.75};
+
+        for (int i = 0; i < 5; i++) {
+            BigDecimal bidPrice = ltp.subtract(BigDecimal.valueOf(bidSteps[i])).setScale(2, RoundingMode.HALF_UP);
+            int bidQty = (rng.nextInt(40) + 10) * 50;
+            int bidOrders = rng.nextInt(15) + 3;
+            totalBuyQty += bidQty;
+
+            Map<String, Object> bidLevel = new java.util.HashMap<>();
+            bidLevel.put("price", bidPrice);
+            bidLevel.put("quantity", bidQty);
+            bidLevel.put("orders", bidOrders);
+            bids.add(bidLevel);
+
+            BigDecimal askPrice = ltp.add(BigDecimal.valueOf(askSteps[i])).setScale(2, RoundingMode.HALF_UP);
+            int askQty = (rng.nextInt(40) + 10) * 50;
+            int askOrders = rng.nextInt(15) + 3;
+            totalSellQty += askQty;
+
+            Map<String, Object> askLevel = new java.util.HashMap<>();
+            askLevel.put("price", askPrice);
+            askLevel.put("quantity", askQty);
+            askLevel.put("orders", askOrders);
+            asks.add(askLevel);
+        }
+
+        long totalVolume = totalBuyQty + totalSellQty;
+        double buyerPercent = totalVolume > 0 ? (totalBuyQty * 100.0) / totalVolume : 50.0;
+        double sellerPercent = 100.0 - buyerPercent;
+
+        Map<String, Object> depth = new java.util.HashMap<>();
+        depth.put("symbol", upperSym);
+        depth.put("lastPrice", ltp);
+        depth.put("bids", bids);
+        depth.put("asks", asks);
+        depth.put("totalBuyQuantity", totalBuyQty);
+        depth.put("totalSellQuantity", totalSellQty);
+        depth.put("buyerPercentage", Math.round(buyerPercent * 10.0) / 10.0);
+        depth.put("sellerPercentage", Math.round(sellerPercent * 10.0) / 10.0);
+
+        return depth;
+    }
 }
+

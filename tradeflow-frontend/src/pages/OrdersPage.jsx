@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SymbolSearch from '../components/SymbolSearch';
+import MarketDepth from '../components/MarketDepth';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { MOCK_ORDERS, MOCK_HOLDINGS, MOCK_WALLET, MOCK_PRICES } from '../mockData';
@@ -262,6 +263,20 @@ export default function OrdersPage() {
                                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Real-time LTP</span>
                                     <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--green)' }}>₹{typeof livePrice === 'number' ? fmt(livePrice) : livePrice}</span>
                                 </div>
+                            )}
+
+                            {form.symbol && (
+                                <MarketDepth
+                                    symbol={form.symbol}
+                                    onPriceSelect={(selectedPrice) => {
+                                        setForm(f => ({
+                                            ...f,
+                                            pricePerUnit: selectedPrice,
+                                            triggerPrice: selectedPrice,
+                                            orderType: f.orderType === 'MARKET' ? 'LIMIT' : f.orderType
+                                        }));
+                                    }}
+                                />
                             )}
 
                             <div className="form-row">
