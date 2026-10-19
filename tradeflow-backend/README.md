@@ -1,103 +1,109 @@
-# TradeFlow — Wallet Service
+# TradeFlow — Backend Microservices Architecture
 
-Lightweight Spring Boot microservice that manages wallets and transaction records for the TradeFlow backend.
-
-This module lives at `tradeflow-backend/wallet_service` and is part of the larger TradeFlow multi-module project.
-
-## Features
-
-- Wallet CRUD operations
-- Transaction recording and querying
-- Persistence via Spring Data JPA
-- Designed to run independently or together with other backend services
-
-## Tech stack
-
-- Java (8+ / 11+ recommended)
-- Spring Boot
-- Spring Data JPA (Hibernate)
-- Maven (wrapper included)
-
-## Prerequisites
-
-- JDK 11 or newer installed and JAVA_HOME set
-- A relational database (MySQL, PostgreSQL, etc.) for production. The project may include an in-memory DB for development (check `application.properties`).
-
-You can use the included Maven wrapper (`./mvnw`) so Maven does not need to be installed globally.
-
-## Configuration
-
-Edit `src/main/resources/application.properties` to configure:
-
-- `spring.datasource.url` — JDBC URL for your database
-- `spring.datasource.username` and `spring.datasource.password`
-- `server.port` — service port (defaults usually to 8080)
-
-If the project uses profiles, set `spring.profiles.active` to switch between `dev`, `test`, and `prod` configurations.
-
-## Build
-
-From the module root (`tradeflow-backend/wallet_service`):
-
-- Using the wrapper:
-  ./mvnw clean package
-
-- Or with a system Maven installation:
-  mvn clean package
-
-This produces a runnable JAR under `target/`.
-
-## Run
-
-- Run with the Maven Spring Boot plugin:
-  ./mvnw spring-boot:run
-
-- Or run the packaged jar:
-  java -jar target/*.jar
-
-When running as part of the full backend, start other required services (discovery, API gateway, etc.) as needed.
-
-## Common API (example)
-
-Controller and routing details may vary. The repository contains `TransactionRepository` with:
-
-- `List<Transaction> findByWalletIdOrderByTimestampDesc(Long walletId)` — typically used to return a wallet's transactions ordered newest first.
-
-Example (adjust paths if controllers differ):
-
-- Get transactions for a wallet:
-  curl -X GET "http://localhost:8080/wallets/{walletId}/transactions"
-
-Replace host/port/path according to your running configuration.
-
-## Database migrations
-
-If the project uses Flyway or Liquibase, migration files will be in `src/main/resources/db/migration` or a similar directory — check the codebase and the `pom.xml` for configuration.
-
-## Tests
-
-Run unit/integration tests:
-
-  ./mvnw test
-
-Test reports will be available under `target/surefire-reports` / `target/failsafe-reports` depending on configuration.
-
-## Debugging / Development tips
-
-- Use your IDE to run the Spring Boot application from the main class in `src/main/java` for faster edit-run-debug cycles.
-- Enable a dev profile with an embedded DB for quick local testing.
-- Check logs in `target` or console output for startup problems.
-
-## Contributing
-
-1. Create a branch for your feature or fix: `git checkout -b feature/your-feature`
-2. Run tests and ensure the project builds
-3. Open a pull request with a description of the change
-
-## License
-
-This repository may include a license file at the project root. If not, check with the project owner for the intended license.
+The backend of **TradeFlow** is composed of 9 decoupled Spring Boot 3 microservices running on **Java 21**, orchestrated by **Spring Cloud Gateway** and **Netflix Eureka Discovery Server**, with **Apache Kafka (KRaft)** handling asynchronous event-driven transactions and **Redis** providing sub-millisecond caching.
 
 ---
 
-If you want a README tailored to the whole multi-module backend or a more detailed API reference generated from the actual controllers, I can create that next.
+## 🏛️ Microservice Inventory
+
+```
+tradeflow-backend/
+├── discovery-server/      # Port 8761: Netflix Eureka service registry
+├── api-gateway/           # Port 8080: Spring Cloud Gateway with JWT filters
+├── auth-service/          # Port 9000: User credentials, BCrypt, JWT, 2FA OTP
+├── user_service/          # Port 8081: User accounts & wallet provisioning
+├── wallet_service/        # Port 8082: Double-entry ledger, balance holds, locking
+├── portfolio_service/     # Port 8083: Holdings, watchlist, Gemini AI summaries
+├── order_service/         # Port 8084: Matching engine, OrderExecutionWorker
+├── market_service/        # Port 8085: Upstox quotes, L2 Market Depth, WebSockets
+├── notification-service/  # Port 8086: SMTP2GO / SendGrid async email dispatch
+└── docker-compose.deploy.yml # Production multi-container orchestrator
+```
+
+---
+
+## 📡 Kafka Event Topics & Choreographed Sagas
+
+TradeFlow implements the **Choreographed Saga Pattern** to ensure strict data consistency across independent microservices without distributed transactions:
+
+| Topic Name | Producer | Consumer(s) | Description |
+| :--- | :--- | :--- | :--- |
+| `order-created-topic` | `order-service` | `wallet-service` | Published when an order is placed. Triggers wallet balance reservation. |
+| `funds-reserved-topic` | `wallet-service` | `order-service` | Emitted when funds are safely locked. Submits order to matching worker. |
+| `funds-rejected-topic` | `wallet-service` | `order-service` | Emitted on insufficient funds. Marks order as `FAILED`. |
+| `order-completed-topic`| `order-service` | `portfolio-service` | Emitted when a trade fills. Updates user stock holdings. |
+| `portfolio-update-failed-topic` | `portfolio-service` | `order-service` | Triggered on holding save failures. Initiates saga balance refund. |
+| `wallet-balance-update-topic` | `order-service` | `wallet-service` | Used for sell proceeds credits or failed order saga rollbacks. |
+| `notification-topic` | `order-service` | `notification-service` | Publishes trade fill notifications to deliver email receipts. |
+| `otp-topic` | `auth-service` | `notification-service` | Dispatches 2FA login & sell confirmation codes. |
+| `ledger-transaction-topic` | `wallet-service` | `notification-service` | Dispatches deposit & withdrawal receipts. |
+
+---
+
+## ⚡ Redis Caching Schema
+
+The backend uses a shared Redis 8 instance (`redis://redis:6379`) on `app-net`:
+
+| Key Pattern | TTL | Managed By | Purpose |
+| :--- | :--- | :--- | :--- |
+| `price:{SYMBOL}` | 5 sec | `market-service` | High-frequency live stock quote caching. |
+| `price:mock:{SYMBOL}` | 5 sec | `market-service` | Ticker simulation cache when off-market hours. |
+| `market:instruments` | 24 hrs | `market-service` | Upstox symbol-to-instrument key mappings. |
+| `market:equity_symbols` | 24 hrs | `market-service` | Fast autocomplete search symbol lookup list. |
+| `upstox:access_token` | Dynamic | `auth-service` / `market` | Active OAuth token for Upstox v2 API calls. |
+| `jwt_blacklist:{TOKEN}`| Token TTL | `api-gateway` / `auth` | Revoked JWT tokens upon user logout. |
+
+---
+
+## ⚙️ Environment Configuration
+
+Refer to [`tradeflow-backend/.env.example`](.env.example) for all configurable environment variables:
+
+```env
+# Database Credentials
+AUTH_DB_URL=jdbc:postgresql://postgres:5432/tradeflow
+AUTH_DB_USERNAME=postgres
+AUTH_DB_PASSWORD=your_password
+
+# JWT Security
+JWT_SECRET=your_32_character_minimum_high_entropy_secret_key
+
+# Notification (SMTP2GO & SendGrid)
+SMTP_HOST=smtp.smtp2go.com
+SMTP_PORT=2525
+SMTP_USERNAME=tradeflow-smtp
+SMTP_PASSWORD=your_smtp_password
+SMTP_FROM=no-reply@hbhanot.tech
+SENDGRID_API_KEY=your_optional_fallback_key
+
+# Upstox & AI
+UPSTOX_API_KEY=your_key
+UPSTOX_API_SECRET=your_secret
+GEMINI_API_KEY=your_google_ai_key
+```
+
+---
+
+## 🛠️ Build and Testing
+
+```bash
+# Compile and package all 9 services
+mvn clean package -DskipTests
+
+# Run tests on specific service (e.g. order matching tests)
+mvn test -pl order_service
+```
+
+---
+
+## 🐳 Docker Deployment
+
+The multi-container deployment connects all services to the external Docker bridge network `app-net`:
+
+```bash
+# Pull latest images from GitHub Container Registry
+docker compose -f docker-compose.deploy.yml pull
+
+# Start full backend stack in background
+docker compose -f docker-compose.deploy.yml up -d --remove-orphans
+```
