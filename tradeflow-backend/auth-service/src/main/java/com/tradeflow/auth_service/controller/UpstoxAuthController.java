@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth/upstox")
+@RequestMapping("/auth")
 @Slf4j
 public class UpstoxAuthController {
 
@@ -38,7 +38,7 @@ public class UpstoxAuthController {
     /**
      * Checks if a valid token exists in Redis.
      */
-    @GetMapping("/status")
+    @GetMapping({"/upstox/status", "/broker/status"})
     public ResponseEntity<Map<String, Object>> getBrokerStatus() {
         String token = redisTemplate.opsForValue().get(REDIS_TOKEN_KEY);
         boolean isConnected = (token != null && !token.isBlank());
@@ -53,8 +53,14 @@ public class UpstoxAuthController {
     /**
      * Helper to get the auth URL for the frontend.
      */
-    @GetMapping("/login-url")
-    public ResponseEntity<Map<String, String>> getUpstoxLoginUrl() {
+    @GetMapping({"/upstox/login-url", "/login-url"})
+    public ResponseEntity<?> getUpstoxLoginUrl() {
+        if (apiKey == null || apiKey.isBlank() || "your_api_key".equalsIgnoreCase(apiKey)) {
+            log.error("🚨 UPSTOX_API_KEY is not configured or still set to 'your_api_key'!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "UPSTOX_API_KEY is not configured. Please set your Upstox API key in .env"));
+        }
+
         String state = java.util.UUID.randomUUID().toString();
         redisTemplate.opsForValue().set("oauth_state:" + state, "active", Duration.ofMinutes(10));
 
@@ -66,8 +72,9 @@ public class UpstoxAuthController {
 
     /**
      * Handles the redirect from Upstox after the user logs in.
+     * Supports both /auth/upstox/callback and /auth/callback.
      */
-    @GetMapping("/callback")
+    @GetMapping({"/upstox/callback", "/callback"})
     public ResponseEntity<?> handleCallback(
             @RequestParam String code,
             @RequestParam(required = false) String state) {

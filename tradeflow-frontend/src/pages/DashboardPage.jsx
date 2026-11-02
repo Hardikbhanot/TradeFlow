@@ -172,9 +172,9 @@ export default function DashboardPage() {
                 window.location.href = res.data.url;
                 return;
             }
-            addToast('Unable to retrieve Upstox login URL from backend.', 'error');
+            addToast(res.data?.error || 'Unable to retrieve Upstox login URL from backend.', 'error');
         } catch (err) {
-            addToast('Failed to get connection URL from backend.', 'error');
+            addToast(err?.response?.data?.error || 'Failed to get connection URL from backend.', 'error');
         }
     }
 
