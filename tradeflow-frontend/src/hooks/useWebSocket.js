@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
@@ -27,7 +27,7 @@ export const useWebSocket = (userId) => {
             // 1. Subscribe to Live Market Data
             client.subscribe('/topic/market-data', (message) => {
                 const data = JSON.parse(message.body);
-                setMarketData(data);
+                setMarketData(previous => ({ ...previous, ...data }));
             });
 
             // 2. Subscribe to Personal Order Updates

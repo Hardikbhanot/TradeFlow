@@ -147,6 +147,12 @@ public class MarketService {
         // Map symbols to instrument keys safely
         java.util.List<String> instrumentKeys = new java.util.ArrayList<>();
         for (String symbol : symbols) {
+            Object cachedPrice = redisTemplate.opsForValue().get(CACHE_KEY_PREFIX + symbol.toUpperCase());
+            if (cachedPrice != null) {
+                results.put(symbol, new BigDecimal(cachedPrice.toString()));
+                continue;
+            }
+
             try {
                 instrumentKeys.add(resolveInstrumentKey(symbol));
             } catch (ResponseStatusException e) {
@@ -488,4 +494,3 @@ public class MarketService {
         return depth;
     }
 }
-

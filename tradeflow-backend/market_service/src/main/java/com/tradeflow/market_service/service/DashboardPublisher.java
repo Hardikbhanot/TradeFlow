@@ -17,17 +17,17 @@ public class DashboardPublisher {
 
     private final MarketService marketService;
     private final SimpMessagingTemplate messagingTemplate;
-
-    // Curated list of top active Indian stocks for the live dashboard
-    private static final List<String> TOP_STOCKS = List.of(
-            "RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "INFY", "ITC",
-            "SBIN", "BHARTIARTL", "KOTAKBANK", "LT");
+    private final KiteTickerService kiteTickerService;
 
     private Map<String, BigDecimal> lastKnownPrices = null;
 
-    public DashboardPublisher(MarketService marketService, SimpMessagingTemplate messagingTemplate) {
+    public DashboardPublisher(
+            MarketService marketService,
+            SimpMessagingTemplate messagingTemplate,
+            KiteTickerService kiteTickerService) {
         this.marketService = marketService;
         this.messagingTemplate = messagingTemplate;
+        this.kiteTickerService = kiteTickerService;
     }
 
     /**
@@ -37,6 +37,11 @@ public class DashboardPublisher {
      */
     @Scheduled(fixedRate = 2000)
     public void publishLiveMarketData() {
+        // Keep the existing Upstox polling path as a fallback until the Kite stream is connected.
+        if (kiteTickerService.isConnected()) {
+            return;
+        }
+
         try {
             // IF the market is closed AND we already fetched the closing prices once,
             // just broadcast the cached prices to accommodate new frontend connections
@@ -49,7 +54,8 @@ public class DashboardPublisher {
             Long startTime = System.currentTimeMillis();
 
             // 1. Fetch live prices for all TOP_STOCKS efficiently
-            Map<String, BigDecimal> livePrices = marketService.getBatchLivePrices(TOP_STOCKS);
+            Map<String, BigDecimal> livePrices =
+                    marketService.getBatchLivePrices(KiteTickerService.SUBSCRIBED_SYMBOLS);
 
             // 2. Broadcast the Map to all frontend clients subscribed to /topic/market-data
             if (livePrices != null && !livePrices.isEmpty()) {

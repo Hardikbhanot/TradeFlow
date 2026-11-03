@@ -31,6 +31,8 @@ export default function DashboardPage() {
     const [loadingHoldings, setLoadingHoldings] = useState(true);
     const [brokerStatus, setBrokerStatus] = useState({ connected: false, broker: 'None' });
     const [loadingBroker, setLoadingBroker] = useState(true);
+    const [kiteStatus, setKiteStatus] = useState({ connected: false, broker: 'Zerodha Kite' });
+    const [loadingKite, setLoadingKite] = useState(true);
     const [toasts, setToasts] = useState([]);
 
 
@@ -103,6 +105,17 @@ export default function DashboardPage() {
         }
     }, []);
 
+    const fetchKiteStatus = useCallback(async () => {
+        try {
+            const res = await api.get('/auth/kite/status');
+            setKiteStatus(res.data);
+        } catch {
+            setKiteStatus({ connected: false, broker: 'Zerodha Kite' });
+        } finally {
+            setLoadingKite(false);
+        }
+    }, []);
+
     const fetchHistory = useCallback(async () => {
         try {
             const res = await api.get('/api/v1/orders');
@@ -131,14 +144,21 @@ export default function DashboardPage() {
         fetchHoldings();
         fetchWallet();
         fetchBrokerStatus();
+        fetchKiteStatus();
         fetchHistory();
-    }, [fetchHoldings, fetchWallet, fetchBrokerStatus, fetchHistory]);
+    }, [fetchHoldings, fetchWallet, fetchBrokerStatus, fetchKiteStatus, fetchHistory]);
 
     useEffect(() => {
         fetchAllPrices();
         const id = setInterval(fetchAllPrices, 2000);
         return () => clearInterval(id);
     }, [fetchAllPrices]);
+
+    useEffect(() => {
+        if (Object.keys(marketData).length > 0) {
+            setPrices(previous => ({ ...previous, ...marketData }));
+        }
+    }, [marketData]);
 
     useEffect(() => {
         if (holdings.length) {
@@ -175,6 +195,19 @@ export default function DashboardPage() {
             addToast(res.data?.error || 'Unable to retrieve Upstox login URL from backend.', 'error');
         } catch (err) {
             addToast(err?.response?.data?.error || 'Failed to get connection URL from backend.', 'error');
+        }
+    }
+
+    async function connectKite() {
+        try {
+            const res = await api.get('/auth/kite/login-url');
+            if (res.data?.url) {
+                window.location.href = res.data.url;
+                return;
+            }
+            addToast(res.data?.message || 'Unable to retrieve Zerodha Kite login URL.', 'error');
+        } catch (err) {
+            addToast(err.response?.data?.message || 'Failed to start Zerodha Kite login.', 'error');
         }
     }
 
@@ -489,6 +522,30 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="dashboard-right">
+                            <div className="card" style={{ alignSelf: 'start' }}>
+                                <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>Zerodha Kite Connect</span>
+                                    {loadingKite ? (
+                                        <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>Checking...</span>
+                                    ) : (
+                                        <span className={`badge ${kiteStatus.connected ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.65rem' }}>
+                                            {kiteStatus.connected ? 'TOKEN AVAILABLE' : 'DISCONNECTED'}
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                                    Connect your Zerodha account to stream live market quotes to TradeFlow. Kite sessions expire daily, so reconnect when needed. Order routing is not enabled yet.
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-full"
+                                    style={{ background: 'var(--primary)', color: '#000' }}
+                                    onClick={connectKite}
+                                >
+                                    {kiteStatus.connected ? 'Connect / Renew Kite Session' : 'Connect Zerodha Kite'}
+                                </button>
+                            </div>
+
                             {!brokerStatus.connected && (
                                 <div className="card" style={{ alignSelf: 'start' }}>
                                     <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

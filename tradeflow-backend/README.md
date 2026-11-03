@@ -80,7 +80,26 @@ SENDGRID_API_KEY=your_optional_fallback_key
 UPSTOX_API_KEY=your_key
 UPSTOX_API_SECRET=your_secret
 GEMINI_API_KEY=your_google_ai_key
+
+# Zerodha Kite Connect (optional until Kite is configured)
+KITE_API_KEY=your_kite_api_key
+KITE_API_SECRET=your_kite_api_secret
+KITE_REDIRECT_URI=https://api.tradeflow.hbhanot.tech/auth/kite/callback
+KITE_FRONTEND_REDIRECT_URL=https://tradeflow.hbhanot.tech/dashboard
 ```
+
+### Kite Connect live quotes
+
+The backend can authenticate a Kite Connect session and stream live NSE equity quotes
+for the dashboard's subscribed symbols. Set `KITE_API_KEY` and `KITE_API_SECRET` in
+the production `.env`, then register this exact redirect URL in the Kite developer
+portal: `https://api.tradeflow.hbhanot.tech/auth/kite/callback`. The dashboard's
+**Connect Zerodha Kite** action starts the login flow. Kite access tokens are
+session-based and must be renewed after expiry. Until the Kite WebSocket connects,
+the existing Upstox polling path remains available as a fallback.
+
+This adds live quote streaming only; order placement is not routed to Kite by this
+integration.
 
 ---
 
