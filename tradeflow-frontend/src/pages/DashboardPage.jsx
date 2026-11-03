@@ -150,8 +150,9 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchAllPrices();
-        const id = setInterval(fetchAllPrices, 2000);
-        return () => clearInterval(id);
+        // Live prices arrive over the market WebSocket; retain REST for initial load only.
+        // const id = setInterval(fetchAllPrices, 2000);
+        // return () => clearInterval(id);
     }, [fetchAllPrices]);
 
     useEffect(() => {
@@ -522,16 +523,13 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="dashboard-right">
+                            {!loadingKite && !kiteStatus.connected && (
                             <div className="card" style={{ alignSelf: 'start' }}>
                                 <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span>Zerodha Kite Connect</span>
-                                    {loadingKite ? (
-                                        <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>Checking...</span>
-                                    ) : (
-                                        <span className={`badge ${kiteStatus.connected ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.65rem' }}>
-                                            {kiteStatus.connected ? 'TOKEN AVAILABLE' : 'DISCONNECTED'}
-                                        </span>
-                                    )}
+                                    <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
+                                        DISCONNECTED
+                                    </span>
                                 </div>
                                 <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
                                     Connect your Zerodha account to stream live market quotes to TradeFlow. Kite sessions expire daily, so reconnect when needed. Order routing is not enabled yet.
@@ -542,9 +540,10 @@ export default function DashboardPage() {
                                     style={{ background: 'var(--primary)', color: '#000' }}
                                     onClick={connectKite}
                                 >
-                                    {kiteStatus.connected ? 'Connect / Renew Kite Session' : 'Connect Zerodha Kite'}
+                                    Connect Zerodha Kite
                                 </button>
                             </div>
+                            )}
 
                             {!brokerStatus.connected && (
                                 <div className="card" style={{ alignSelf: 'start' }}>

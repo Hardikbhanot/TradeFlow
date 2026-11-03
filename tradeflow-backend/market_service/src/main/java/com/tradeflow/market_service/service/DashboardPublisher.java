@@ -31,13 +31,12 @@ public class DashboardPublisher {
     }
 
     /**
-     * Runs every 2 seconds (2000 ms).
-     * Fetches the live batch of prices and pushes them to the connected STOMP
-     * WebSocket clients.
+     * Preserved legacy Upstox polling implementation; the scheduled polling is disabled
+     * while live dashboard quotes are delivered directly by KiteTickerService.
      */
-    @Scheduled(fixedRate = 2000)
+    // @Scheduled(fixedRate = 2000)
     public void publishLiveMarketData() {
-        // Keep the existing Upstox polling path as a fallback until the Kite stream is connected.
+        // Legacy fallback logic retained for possible manual use.
         if (kiteTickerService.isConnected()) {
             return;
         }

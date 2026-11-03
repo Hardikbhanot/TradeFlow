@@ -24,6 +24,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +36,7 @@ import java.util.UUID;
 public class KiteAuthController {
 
     static final String REDIS_TOKEN_KEY = "kite:access_token";
+    static final String REDIS_TOKEN_EXPIRY_KEY = "kite:access_token:expires_at";
     private static final String STATE_KEY_PREFIX = "kite:oauth_state:";
     private static final String TOKEN_URL = "https://api.kite.trade/session/token";
 
@@ -60,6 +64,15 @@ public class KiteAuthController {
     public ResponseEntity<Map<String, Object>> getStatus() {
         String accessToken = redisTemplate.opsForValue().get(REDIS_TOKEN_KEY);
         boolean connected = accessToken != null && !accessToken.isBlank();
+        if (connected) {
+            String expiryTimestamp = redisTemplate.opsForValue().get(REDIS_TOKEN_EXPIRY_KEY);
+            connected = expiryTimestamp != null
+                    && Long.parseLong(expiryTimestamp) > System.currentTimeMillis();
+            if (!connected) {
+                redisTemplate.delete(REDIS_TOKEN_KEY);
+                redisTemplate.delete(REDIS_TOKEN_EXPIRY_KEY);
+            }
+        }
         return ResponseEntity.ok(Map.of(
                 "connected", connected,
                 "broker", "Zerodha Kite",
@@ -128,7 +141,11 @@ public class KiteAuthController {
                         .body(Map.of("message", "Kite did not return an access token."));
             }
 
-            redisTemplate.opsForValue().set(REDIS_TOKEN_KEY, accessTokenNode.asText(), Duration.ofHours(24));
+            Duration lifetime = tokenLifetime();
+            long expiryTimestamp = System.currentTimeMillis() + lifetime.toMillis();
+            redisTemplate.opsForValue().set(REDIS_TOKEN_KEY, accessTokenNode.asText(), lifetime);
+            redisTemplate.opsForValue().set(
+                    REDIS_TOKEN_EXPIRY_KEY, Long.toString(expiryTimestamp), lifetime);
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(URI.create(frontendRedirectUrl))
                     .build();
@@ -143,5 +160,13 @@ public class KiteAuthController {
     private String createChecksum(String value) throws NoSuchAlgorithmException {
         return HexFormat.of().formatHex(
                 MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private Duration tokenLifetime() {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+        ZonedDateTime expiry = now.toLocalDate().plusDays(1)
+                .atTime(LocalTime.of(6, 0))
+                .atZone(now.getZone());
+        return Duration.between(now, expiry);
     }
 }

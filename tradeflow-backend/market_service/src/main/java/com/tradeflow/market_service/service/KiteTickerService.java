@@ -47,6 +47,7 @@ public class KiteTickerService implements WebSocket.Listener {
             "SBIN", "BHARTIARTL", "KOTAKBANK", "LT");
 
     private static final String TOKEN_KEY = "kite:access_token";
+    private static final String TOKEN_EXPIRY_KEY = "kite:access_token:expires_at";
     private static final String INSTRUMENTS_URL = "https://api.kite.trade/instruments/NSE";
     private static final Set<String> WANTED_SYMBOLS = Set.copyOf(SUBSCRIBED_SYMBOLS);
 
@@ -76,7 +77,7 @@ public class KiteTickerService implements WebSocket.Listener {
         this.messagingTemplate = messagingTemplate;
     }
 
-    @Scheduled(fixedDelay = 30_000, initialDelay = 1_000)
+    @Scheduled(fixedDelay = 5_000, initialDelay = 1_000)
     public void maintainConnection() {
         if (apiKey.isBlank()) {
             return;
@@ -84,6 +85,13 @@ public class KiteTickerService implements WebSocket.Listener {
 
         String accessToken = stringRedisTemplate.opsForValue().get(TOKEN_KEY);
         if (accessToken == null || accessToken.isBlank()) {
+            disconnect();
+            return;
+        }
+        String expiryTimestamp = stringRedisTemplate.opsForValue().get(TOKEN_EXPIRY_KEY);
+        if (expiryTimestamp == null || Long.parseLong(expiryTimestamp) <= System.currentTimeMillis()) {
+            stringRedisTemplate.delete(TOKEN_KEY);
+            stringRedisTemplate.delete(TOKEN_EXPIRY_KEY);
             disconnect();
             return;
         }

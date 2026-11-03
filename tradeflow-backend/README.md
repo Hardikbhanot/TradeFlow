@@ -95,8 +95,10 @@ for the dashboard's subscribed symbols. Set `KITE_API_KEY` and `KITE_API_SECRET`
 the production `.env`, then register this exact redirect URL in the Kite developer
 portal: `https://api.tradeflow.hbhanot.tech/auth/kite/callback`. The dashboard's
 **Connect Zerodha Kite** action starts the login flow. Kite access tokens are
-session-based and must be renewed after expiry. Until the Kite WebSocket connects,
-the existing Upstox polling path remains available as a fallback.
+session-based and expire at 6:00 AM IST the next day, so reconnect after expiry.
+Zerodha lists the Personal tier as free; the Connect tier required for live
+WebSocket streaming and historical candles is ₹500/month. The dashboard receives
+live quote updates from the Kite WebSocket without periodic two-second quote polling.
 
 This adds live quote streaming only; order placement is not routed to Kite by this
 integration.
