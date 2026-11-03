@@ -29,8 +29,6 @@ export default function DashboardPage() {
     const [wallet, setWallet] = useState(null);
     const [prices, setPrices] = useState({});
     const [loadingHoldings, setLoadingHoldings] = useState(true);
-    const [brokerStatus, setBrokerStatus] = useState({ connected: false, broker: 'None' });
-    const [loadingBroker, setLoadingBroker] = useState(true);
     const [kiteStatus, setKiteStatus] = useState({ connected: false, broker: 'Zerodha Kite' });
     const [loadingKite, setLoadingKite] = useState(true);
     const [toasts, setToasts] = useState([]);
@@ -94,17 +92,6 @@ export default function DashboardPage() {
         } catch {}
     }, []);
 
-    const fetchBrokerStatus = useCallback(async () => {
-        try {
-            const res = await api.get('/auth/upstox/status');
-            setBrokerStatus(res.data);
-        } catch {
-            setBrokerStatus({ connected: true, broker: 'Upstox (Active)' });
-        } finally {
-            setLoadingBroker(false);
-        }
-    }, []);
-
     const fetchKiteStatus = useCallback(async () => {
         try {
             const res = await api.get('/auth/kite/status');
@@ -143,10 +130,9 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchHoldings();
         fetchWallet();
-        fetchBrokerStatus();
         fetchKiteStatus();
         fetchHistory();
-    }, [fetchHoldings, fetchWallet, fetchBrokerStatus, fetchKiteStatus, fetchHistory]);
+    }, [fetchHoldings, fetchWallet, fetchKiteStatus, fetchHistory]);
 
     useEffect(() => {
         fetchAllPrices();
@@ -185,19 +171,6 @@ export default function DashboardPage() {
     const totalCurrent = holdings.reduce((s, h) => s + (((prices[h.symbol] ?? h.avgPrice ?? 0) * (h.totalQuantity ?? 0))), 0);
     const pnl = totalCurrent - totalInvested;
     const pnlPct = totalInvested ? (pnl / totalInvested) * 100 : 0;
-
-    async function connectBroker() {
-        try {
-            const res = await api.get('/auth/upstox/login-url');
-            if (res.data?.url) {
-                window.location.href = res.data.url;
-                return;
-            }
-            addToast(res.data?.error || 'Unable to retrieve Upstox login URL from backend.', 'error');
-        } catch (err) {
-            addToast(err?.response?.data?.error || 'Failed to get connection URL from backend.', 'error');
-        }
-    }
 
     async function connectKite() {
         try {
@@ -543,38 +516,6 @@ export default function DashboardPage() {
                                     Connect Zerodha Kite
                                 </button>
                             </div>
-                            )}
-
-                            {!brokerStatus.connected && (
-                                <div className="card" style={{ alignSelf: 'start' }}>
-                                    <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>Broker Verification</span>
-                                        {loadingBroker ? (
-                                            <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>
-                                                Checking...
-                                            </span>
-                                        ) : (
-                                            <span className="badge badge-red" style={{ fontSize: '0.65rem' }}>
-                                                DISCONNECTED
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
-                                        Verify your TradeFlow account by logging into Upstox. This will allow live market data, order routing, and secure authorization via Upstox OAuth.
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                            type="button"
-                                            className="btn btn-primary btn-full"
-                                            style={{ background: 'var(--primary)', color: '#000', flex: 1 }}
-                                            onClick={connectBroker}
-                                        >
-                                            Verify with Upstox
-                                        </button>
-                                    </div>
-                                </div>
                             )}
 
                             <div className="card" style={{ alignSelf: 'start' }}>
