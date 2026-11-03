@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { MOCK_PRICES, generateMockHistory } from '../mockData';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 const POPULAR = [
     { sym: 'RELIANCE', name: 'Reliance Industries' },
@@ -33,6 +34,7 @@ const RANGE_OPTIONS = [
 export default function MarketPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { marketData } = useWebSocket(user?.userId);
     const [prices, setPrices] = useState(MOCK_PRICES);
     const [selected, setSelected] = useState('RELIANCE');
     const [chartData, setChartData] = useState(() => generateMockHistory('RELIANCE', 'TODAY'));
@@ -61,26 +63,29 @@ export default function MarketPage() {
 
     useEffect(() => {
         if (allSymbols.length === 0) return;
-        async function fetchAllPrices() {
+        async function subscribeToLivePrices() {
             try {
-                const res = await api.get('/api/v1/market/prices', {
-                    params: { symbols: allSymbols.join(',') },
-                });
-                const next = { ...MOCK_PRICES };
-                allSymbols.forEach((sym) => {
-                    if (res.data?.[sym] != null) {
-                        next[sym] = Number(res.data[sym]);
-                    }
-                });
-                setPrices(next);
-            } catch {
-                setPrices(prev => ({ ...MOCK_PRICES, ...prev }));
+                await api.post('/api/v1/market/subscriptions', { symbols: allSymbols });
+            } catch (error) {
+                console.error('Unable to subscribe to Kite live prices', error);
             }
         }
-        fetchAllPrices();
-        const id = setInterval(fetchAllPrices, 4000);
-        return () => clearInterval(id);
+        subscribeToLivePrices();
     }, [allSymbols]);
+
+    useEffect(() => {
+        if (Object.keys(marketData).length === 0) return;
+        setPrices(previous => {
+            const next = { ...previous };
+            Object.entries(marketData).forEach(([symbol, price]) => {
+                const numericPrice = Number(price);
+                if (Number.isFinite(numericPrice)) {
+                    next[symbol] = numericPrice;
+                }
+            });
+            return next;
+        });
+    }, [marketData]);
 
     useEffect(() => {
         let cancelled = false;

@@ -7,8 +7,10 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -28,9 +30,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
@@ -49,7 +51,6 @@ public class KiteTickerService implements WebSocket.Listener {
     private static final String TOKEN_KEY = "kite:access_token";
     private static final String TOKEN_EXPIRY_KEY = "kite:access_token:expires_at";
     private static final String INSTRUMENTS_URL = "https://api.kite.trade/instruments/NSE";
-    private static final Set<String> WANTED_SYMBOLS = Set.copyOf(SUBSCRIBED_SYMBOLS);
 
     @Value("${kite.api.key:}")
     private String apiKey;
@@ -61,6 +62,10 @@ public class KiteTickerService implements WebSocket.Listener {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
     private final Map<Integer, String> symbolByInstrumentToken = new ConcurrentHashMap<>();
+    private final Map<String, Integer> instrumentTokenBySymbol = new ConcurrentHashMap<>();
+    private final Set<String> requestedSymbols = ConcurrentHashMap.newKeySet();
+    private final Set<Integer> subscribedInstrumentTokens = ConcurrentHashMap.newKeySet();
+    private final Object subscriptionLock = new Object();
     private final AtomicReference<WebSocket> socket = new AtomicReference<>();
     private final AtomicReference<String> connectionToken = new AtomicReference<>();
     private final AtomicReference<String> connectingToken = new AtomicReference<>();
@@ -75,6 +80,7 @@ public class KiteTickerService implements WebSocket.Listener {
         this.stringRedisTemplate = stringRedisTemplate;
         this.redisTemplate = redisTemplate;
         this.messagingTemplate = messagingTemplate;
+        requestedSymbols.addAll(SUBSCRIBED_SYMBOLS);
     }
 
     @Scheduled(fixedDelay = 5_000, initialDelay = 1_000)
@@ -130,6 +136,45 @@ public class KiteTickerService implements WebSocket.Listener {
         return socket.get() != null && connectionToken.get() != null;
     }
 
+    public List<String> subscribeSymbols(List<String> symbols) {
+        if (symbols == null || symbols.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> normalizedSymbols = symbols.stream()
+                .filter(symbol -> symbol != null && !symbol.isBlank())
+                .map(symbol -> symbol.trim().toUpperCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toSet());
+        synchronized (subscriptionLock) {
+            Set<String> combinedSymbols = ConcurrentHashMap.newKeySet();
+            combinedSymbols.addAll(requestedSymbols);
+            combinedSymbols.addAll(normalizedSymbols);
+            if (combinedSymbols.size() > 3000) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Kite allows at most 3000 subscribed instruments per connection.");
+            }
+
+            requestedSymbols.addAll(normalizedSymbols);
+            List<Integer> newTokens = normalizedSymbols.stream()
+                    .map(instrumentTokenBySymbol::get)
+                    .filter(java.util.Objects::nonNull)
+                    .filter(subscribedInstrumentTokens::add)
+                    .toList();
+
+            WebSocket currentSocket = socket.get();
+            if (currentSocket != null && !newTokens.isEmpty()) {
+                currentSocket.sendText("{\"a\":\"subscribe\",\"v\":" + newTokens + "}", true);
+                currentSocket.sendText("{\"a\":\"mode\",\"v\":[\"full\"," + newTokens + "]}", true);
+            }
+        }
+
+        return normalizedSymbols.stream()
+                .filter(instrumentTokenBySymbol::containsKey)
+                .sorted()
+                .toList();
+    }
+
     private boolean ensureInstrumentMaster(String accessToken) {
         LocalDate today = LocalDate.now();
         if (today.equals(instrumentMasterDate) && !symbolByInstrumentToken.isEmpty()) {
@@ -163,24 +208,26 @@ public class KiteTickerService implements WebSocket.Listener {
                             .build()
                             .parse(reader)) {
                 Map<Integer, String> loadedTokens = new HashMap<>();
+                Map<String, Integer> loadedSymbols = new HashMap<>();
                 for (CSVRecord record : parser) {
                     if (!"NSE".equals(record.get("exchange"))
                             || !"EQ".equals(record.get("instrument_type"))) {
                         continue;
                     }
                     String symbol = record.get("tradingsymbol").trim().toUpperCase();
-                    if (!WANTED_SYMBOLS.contains(symbol)) {
-                        continue;
-                    }
-                    loadedTokens.put(Integer.parseInt(record.get("instrument_token")), symbol);
+                    int token = Integer.parseInt(record.get("instrument_token"));
+                    loadedTokens.put(token, symbol);
+                    loadedSymbols.put(symbol, token);
                 }
 
                 if (loadedTokens.isEmpty()) {
-                    log.warn("Kite instrument master did not contain any subscribed NSE equity symbols.");
+                    log.warn("Kite instrument master did not contain any NSE equity symbols.");
                     return false;
                 }
                 symbolByInstrumentToken.clear();
                 symbolByInstrumentToken.putAll(loadedTokens);
+                instrumentTokenBySymbol.clear();
+                instrumentTokenBySymbol.putAll(loadedSymbols);
                 instrumentMasterDate = today;
                 log.info("Loaded {} Kite NSE equity instrument tokens.", loadedTokens.size());
                 return true;
@@ -209,9 +256,19 @@ public class KiteTickerService implements WebSocket.Listener {
         connectionToken.set(connectingToken.get());
         webSocket.request(1);
 
-        List<Integer> instrumentTokens = new ArrayList<>(symbolByInstrumentToken.keySet());
-        webSocket.sendText("{\"a\":\"subscribe\",\"v\":" + instrumentTokens + "}", true);
-        webSocket.sendText("{\"a\":\"mode\",\"v\":[\"full\"," + instrumentTokens + "]}", true);
+        List<Integer> instrumentTokens;
+        synchronized (subscriptionLock) {
+            subscribedInstrumentTokens.clear();
+            instrumentTokens = requestedSymbols.stream()
+                    .map(instrumentTokenBySymbol::get)
+                    .filter(java.util.Objects::nonNull)
+                    .filter(subscribedInstrumentTokens::add)
+                    .toList();
+            if (!instrumentTokens.isEmpty()) {
+                webSocket.sendText("{\"a\":\"subscribe\",\"v\":" + instrumentTokens + "}", true);
+                webSocket.sendText("{\"a\":\"mode\",\"v\":[\"full\"," + instrumentTokens + "]}", true);
+            }
+        }
         log.info("Connected to Kite ticker and subscribed to {} NSE equities.", instrumentTokens.size());
     }
 

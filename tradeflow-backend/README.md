@@ -91,17 +91,23 @@ KITE_FRONTEND_REDIRECT_URL=https://tradeflow.hbhanot.tech/dashboard
 ### Kite Connect live quotes
 
 The backend can authenticate a Kite Connect session and stream live NSE equity quotes
-for the dashboard's subscribed symbols. Set `KITE_API_KEY` and `KITE_API_SECRET` in
+for dashboard symbols and the Market page's watchlist/popular symbols. The Market page
+registers its symbols with `POST /api/v1/market/subscriptions`; both pages receive
+incremental ticks over the `/topic/market-data` WebSocket topic without periodic quote
+polling. Set `KITE_API_KEY` and `KITE_API_SECRET` in
 the production `.env`, then register this exact redirect URL in the Kite developer
 portal: `https://api.tradeflow.hbhanot.tech/auth/kite/callback`. The dashboard's
 **Connect Zerodha Kite** action starts the login flow. Kite access tokens are
 session-based and expire at 6:00 AM IST the next day, so reconnect after expiry.
 Zerodha lists the Personal tier as free; the Connect tier required for live
-WebSocket streaming and historical candles is ₹500/month. The dashboard receives
-live quote updates from the Kite WebSocket without periodic two-second quote polling.
+WebSocket streaming and historical candles is ₹500/month.
 
 This adds live quote streaming only; order placement is not routed to Kite by this
 integration.
+
+The NSE instrument master is loaded on market-service startup and refreshed daily
+at 08:35 IST. Search scans all symbol-prefix matches before sorting and limiting
+results, so newly listed symbols are not hidden by Redis scan ordering.
 
 ---
 
