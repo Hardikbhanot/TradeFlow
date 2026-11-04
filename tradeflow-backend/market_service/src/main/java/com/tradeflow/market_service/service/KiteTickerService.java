@@ -24,6 +24,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
+import java.net.http.WebSocketHandshakeException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -127,7 +128,16 @@ public class KiteTickerService implements WebSocket.Listener {
                 .whenComplete((webSocket, error) -> {
                     connectingToken.compareAndSet(accessToken, null);
                     if (error != null) {
-                        log.error("Kite WebSocket connection failed: {}", error.getMessage());
+                        Throwable cause = error;
+                        while (cause.getCause() != null && cause != cause.getCause()) {
+                            cause = cause.getCause();
+                        }
+                        if (cause instanceof WebSocketHandshakeException handshakeException) {
+                            log.error("Kite WebSocket handshake rejected with HTTP {}.",
+                                    handshakeException.getResponse().statusCode());
+                        } else {
+                            log.error("Kite WebSocket connection failed: {}", cause.toString());
+                        }
                     } else if (socket.get() == webSocket
                             || socket.compareAndSet(null, webSocket)) {
                         connectionToken.set(accessToken);
