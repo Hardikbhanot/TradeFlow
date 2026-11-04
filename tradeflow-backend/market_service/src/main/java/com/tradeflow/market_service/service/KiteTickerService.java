@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,6 +73,7 @@ public class KiteTickerService implements WebSocket.Listener {
     private final ByteArrayOutputStream binaryMessage = new ByteArrayOutputStream();
     private volatile LocalDate instrumentMasterDate;
     private volatile Instant lastInstrumentMasterAttempt = Instant.EPOCH;
+    private volatile Instant lastTickAt;
 
     public KiteTickerService(
             StringRedisTemplate stringRedisTemplate,
@@ -126,7 +128,10 @@ public class KiteTickerService implements WebSocket.Listener {
                     connectingToken.compareAndSet(accessToken, null);
                     if (error != null) {
                         log.error("Kite WebSocket connection failed: {}", error.getMessage());
-                    } else if (webSocket != socket.get()) {
+                    } else if (socket.get() == webSocket
+                            || socket.compareAndSet(null, webSocket)) {
+                        connectionToken.set(accessToken);
+                    } else {
                         webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Connection superseded");
                     }
                 });
@@ -134,6 +139,15 @@ public class KiteTickerService implements WebSocket.Listener {
 
     public boolean isConnected() {
         return socket.get() != null && connectionToken.get() != null;
+    }
+
+    public Map<String, Object> getStreamStatus() {
+        Map<String, Object> status = new LinkedHashMap<>();
+        status.put("connected", isConnected());
+        status.put("subscribedSymbols", requestedSymbols.size());
+        status.put("mappedInstruments", instrumentTokenBySymbol.size());
+        status.put("lastTickAt", lastTickAt == null ? null : lastTickAt.toString());
+        return status;
     }
 
     public List<String> subscribeSymbols(List<String> symbols) {
@@ -253,7 +267,6 @@ public class KiteTickerService implements WebSocket.Listener {
     @Override
     public void onOpen(WebSocket webSocket) {
         socket.set(webSocket);
-        connectionToken.set(connectingToken.get());
         webSocket.request(1);
 
         List<Integer> instrumentTokens;
@@ -321,6 +334,7 @@ public class KiteTickerService implements WebSocket.Listener {
         }
 
         if (!updates.isEmpty()) {
+            lastTickAt = Instant.now();
             messagingTemplate.convertAndSend("/topic/market-data", updates);
         }
     }

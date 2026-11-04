@@ -61,6 +61,11 @@ public class MarketController {
         return kiteTickerService.subscribeSymbols(request.get("symbols"));
     }
 
+    @GetMapping("/stream/status")
+    public Map<String, Object> getLiveStreamStatus() {
+        return kiteTickerService.getStreamStatus();
+    }
+
     @GetMapping("/history/{symbol}")
     public List<PriceHistoryPoint> getHistory(
             @PathVariable String symbol,
