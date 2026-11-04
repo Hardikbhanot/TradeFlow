@@ -9,7 +9,7 @@ export default function MarketNews() {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const res = await api.get('/api/v1/market/news');
+                const res = await api.get('/api/v1/market/news', { timeout: 12000 });
                 setNews(res.data);
             } catch (err) {
                 console.error("Failed to fetch news", err);

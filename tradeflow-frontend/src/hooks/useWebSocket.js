@@ -3,10 +3,12 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 const getSocketUrl = () => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-    // Remove trailing slash if present
-    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    return `${cleanBaseUrl}/api/v1/market/ws`;
+    const apiBase = new URL(
+        import.meta.env.VITE_API_BASE_URL || window.location.origin,
+        window.location.origin
+    );
+    apiBase.protocol = apiBase.protocol === 'https:' ? 'https:' : 'http:';
+    return new URL('/api/v1/market/ws', apiBase).toString();
 };
 export const useWebSocket = (userId) => {
     const [marketData, setMarketData] = useState({});

@@ -24,7 +24,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // The endpoint the React frontend will connect to
         registry.addEndpoint("/api/v1/market/ws")
                 .setAllowedOriginPatterns("*")
-                .withSockJS()
-                .setSuppressCors(true);
+                .withSockJS();
     }
 }
