@@ -160,6 +160,10 @@ public class KiteTickerService implements WebSocket.Listener {
         return status;
     }
 
+    public List<String> getRequestedSymbols() {
+        return requestedSymbols.stream().sorted().toList();
+    }
+
     public List<String> subscribeSymbols(List<String> symbols) {
         if (symbols == null || symbols.isEmpty()) {
             return List.of();

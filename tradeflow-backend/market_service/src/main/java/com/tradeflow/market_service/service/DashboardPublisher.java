@@ -30,13 +30,8 @@ public class DashboardPublisher {
         this.kiteTickerService = kiteTickerService;
     }
 
-    /**
-     * Preserved legacy Upstox polling implementation; the scheduled polling is disabled
-     * while live dashboard quotes are delivered directly by KiteTickerService.
-     */
-    // @Scheduled(fixedRate = 2000)
+    @Scheduled(fixedDelay = 5_000, initialDelay = 1_000)
     public void publishLiveMarketData() {
-        // Legacy fallback logic retained for possible manual use.
         if (kiteTickerService.isConnected()) {
             return;
         }
@@ -52,17 +47,16 @@ public class DashboardPublisher {
 
             Long startTime = System.currentTimeMillis();
 
-            // 1. Fetch live prices for all TOP_STOCKS efficiently
+            // Fall back to the quote API when Kite is unavailable.
             Map<String, BigDecimal> livePrices =
-                    marketService.getBatchLivePrices(KiteTickerService.SUBSCRIBED_SYMBOLS);
+                    marketService.getBatchLivePrices(kiteTickerService.getRequestedSymbols());
 
-            // 2. Broadcast the Map to all frontend clients subscribed to /topic/market-data
             if (livePrices != null && !livePrices.isEmpty()) {
                 lastKnownPrices = livePrices; // Cache it for market-closed fallback
                 messagingTemplate.convertAndSend("/topic/market-data", livePrices);
 
                 Long duration = System.currentTimeMillis() - startTime;
-                log.info("📡 Pushed {} live prices to Dashboard WS in {}ms", livePrices.size(), duration);
+                log.info("Published {} fallback market prices to WebSocket in {}ms", livePrices.size(), duration);
             }
         } catch (Exception e) {
             log.error("❌ Failed to push market data to WebSocket: {}", e.getMessage(), e);

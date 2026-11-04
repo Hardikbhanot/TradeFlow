@@ -93,8 +93,9 @@ KITE_FRONTEND_REDIRECT_URL=https://tradeflow.hbhanot.tech/dashboard
 The backend can authenticate a Kite Connect session and stream live NSE equity quotes
 for dashboard symbols and the Market page's watchlist/popular symbols. The Market page
 registers its symbols with `POST /api/v1/market/subscriptions`; both pages receive
-incremental ticks over the `/topic/market-data` WebSocket topic without periodic quote
-polling. Set `KITE_API_KEY` and `KITE_API_SECRET` in
+incremental ticks over the `/topic/market-data` WebSocket topic. When Kite is not
+connected, the market service periodically publishes fallback quotes from Upstox (or
+simulated prices when no quote provider is configured). Set `KITE_API_KEY` and `KITE_API_SECRET` in
 the production `.env`, then register this exact redirect URL in the Kite developer
 portal: `https://api.tradeflow.hbhanot.tech/auth/kite/callback`. The dashboard's
 **Connect Zerodha Kite** action starts the login flow. Kite access tokens are
