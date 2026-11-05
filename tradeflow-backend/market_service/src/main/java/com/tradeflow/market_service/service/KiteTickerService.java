@@ -119,11 +119,13 @@ public class KiteTickerService implements WebSocket.Listener {
 
         String encodedApiKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
         String encodedToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
-        URI uri = URI.create("wss://ws.kite.trade?api_key=" + encodedApiKey + "&access_token=" + encodedToken);
+        URI uri = URI.create("wss://ws.kite.trade/?api_key=" + encodedApiKey + "&access_token=" + encodedToken);
         connectingToken.set(accessToken);
 
         httpClient.newWebSocketBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
+                .header("X-Kite-Version", "3")
+                .header("User-Agent", "TradeFlow/1.0")
                 .buildAsync(uri, this)
                 .whenComplete((webSocket, error) -> {
                     connectingToken.compareAndSet(accessToken, null);
@@ -132,15 +134,29 @@ public class KiteTickerService implements WebSocket.Listener {
                         while (cause.getCause() != null && cause != cause.getCause()) {
                             cause = cause.getCause();
                         }
+                        String errorMessage = cause.getMessage() != null ? cause.getMessage() : cause.toString();
+                        boolean isForbidden = errorMessage.contains("403");
+                        boolean isUnauthorized = errorMessage.contains("401");
                         if (cause instanceof WebSocketHandshakeException handshakeException) {
-                            log.error("Kite WebSocket handshake rejected with HTTP {}.",
-                                    handshakeException.getResponse().statusCode());
+                            int statusCode = handshakeException.getResponse().statusCode();
+                            isForbidden = isForbidden || statusCode == 403;
+                            isUnauthorized = isUnauthorized || statusCode == 401;
+                            log.error("Kite WebSocket handshake rejected with HTTP {}.", statusCode);
                         } else {
-                            log.error("Kite WebSocket connection failed: {}", cause.toString());
+                            log.error("Kite WebSocket connection failed: {}", errorMessage);
+                        }
+
+                        if (isForbidden || isUnauthorized) {
+                            log.warn("Kite rejected WebSocket credentials (HTTP {}). Clearing token from Redis to halt reconnection storm.",
+                                    isForbidden ? 403 : 401);
+                            stringRedisTemplate.delete(TOKEN_KEY);
+                            stringRedisTemplate.delete(TOKEN_EXPIRY_KEY);
+                            disconnect();
                         }
                     } else if (socket.get() == webSocket
                             || socket.compareAndSet(null, webSocket)) {
                         connectionToken.set(accessToken);
+                        log.info("Kite WebSocket handshake succeeded. Connected to live stream.");
                     } else {
                         webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Connection superseded");
                     }
