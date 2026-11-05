@@ -363,9 +363,14 @@ public class MarketService {
             base = getBasePrice(symbol);
         }
 
+        if (!isMarketOpen()) {
+            redisTemplate.opsForValue().set(cacheKey, base.toString(), Duration.ofHours(1));
+            return base;
+        }
+
         BigDecimal fluctuated = fluctuate(base);
 
-        // Update the mock price in Redis for 5 seconds to create a "ticker" effect
+        // Update the mock price in Redis for 5 seconds to create a "ticker" effect during market hours
         redisTemplate.opsForValue().set(cacheKey, fluctuated.toString(), Duration.ofSeconds(5));
         return fluctuated;
     }
@@ -435,7 +440,10 @@ public class MarketService {
         BigDecimal ltp = getLivePrice(symbol);
         String upperSym = symbol.toUpperCase();
 
-        int seed = (int) (System.currentTimeMillis() / 2000) + upperSym.hashCode();
+        boolean open = isMarketOpen();
+        int seed = open
+                ? (int) (System.currentTimeMillis() / 2000) + upperSym.hashCode()
+                : upperSym.hashCode();
         Random rng = new Random(seed);
 
         List<Map<String, Object>> bids = new ArrayList<>();
@@ -484,6 +492,7 @@ public class MarketService {
         depth.put("totalSellQuantity", totalSellQty);
         depth.put("buyerPercentage", Math.round(buyerPercent * 10.0) / 10.0);
         depth.put("sellerPercentage", Math.round(sellerPercent * 10.0) / 10.0);
+        depth.put("marketOpen", open);
 
         return depth;
     }

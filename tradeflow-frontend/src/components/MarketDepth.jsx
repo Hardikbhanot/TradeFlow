@@ -79,6 +79,16 @@ export default function MarketDepth({ symbol, onPriceSelect }) {
                         background: 'rgba(59, 130, 246, 0.1)',
                         color: 'var(--blue, #3b82f6)'
                     }}>L2 DEPTH</span>
+                    {depth.marketOpen === false && (
+                        <span style={{
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            color: 'var(--red, #f43f5e)'
+                        }}>MARKET CLOSED</span>
+                    )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>LTP: </span>
