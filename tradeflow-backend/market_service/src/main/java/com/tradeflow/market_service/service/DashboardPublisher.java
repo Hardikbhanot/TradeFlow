@@ -17,25 +17,26 @@ public class DashboardPublisher {
 
     private final MarketService marketService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final KiteTickerService kiteTickerService;
+
+    // Curated list of top active Indian stocks for the live dashboard
+    private static final List<String> TOP_STOCKS = List.of(
+            "RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "INFY", "ITC",
+            "SBIN", "BHARTIARTL", "KOTAKBANK", "LT");
 
     private Map<String, BigDecimal> lastKnownPrices = null;
 
-    public DashboardPublisher(
-            MarketService marketService,
-            SimpMessagingTemplate messagingTemplate,
-            KiteTickerService kiteTickerService) {
+    public DashboardPublisher(MarketService marketService, SimpMessagingTemplate messagingTemplate) {
         this.marketService = marketService;
         this.messagingTemplate = messagingTemplate;
-        this.kiteTickerService = kiteTickerService;
     }
 
-    @Scheduled(fixedDelay = 5_000, initialDelay = 1_000)
+    /**
+     * Runs every 2 seconds (2000 ms).
+     * Fetches the live batch of prices and pushes them to the connected STOMP
+     * WebSocket clients.
+     */
+    @Scheduled(fixedRate = 2000)
     public void publishLiveMarketData() {
-        if (kiteTickerService.isConnected()) {
-            return;
-        }
-
         try {
             // IF the market is closed AND we already fetched the closing prices once,
             // just broadcast the cached prices to accommodate new frontend connections
@@ -47,16 +48,16 @@ public class DashboardPublisher {
 
             Long startTime = System.currentTimeMillis();
 
-            // Fall back to the quote API when Kite is unavailable.
-            Map<String, BigDecimal> livePrices =
-                    marketService.getBatchLivePrices(kiteTickerService.getRequestedSymbols());
+            // 1. Fetch live prices for all TOP_STOCKS efficiently
+            Map<String, BigDecimal> livePrices = marketService.getBatchLivePrices(TOP_STOCKS);
 
+            // 2. Broadcast the Map to all frontend clients subscribed to /topic/market-data
             if (livePrices != null && !livePrices.isEmpty()) {
                 lastKnownPrices = livePrices; // Cache it for market-closed fallback
                 messagingTemplate.convertAndSend("/topic/market-data", livePrices);
 
                 Long duration = System.currentTimeMillis() - startTime;
-                log.info("Published {} fallback market prices to WebSocket in {}ms", livePrices.size(), duration);
+                log.info("📡 Pushed {} live prices to Dashboard WS in {}ms", livePrices.size(), duration);
             }
         } catch (Exception e) {
             log.error("❌ Failed to push market data to WebSocket: {}", e.getMessage(), e);

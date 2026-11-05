@@ -2,7 +2,6 @@ package com.tradeflow.market_service.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +10,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
-import java.io.InputStream;
-import java.net.URLConnection;
 import java.net.URL;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,15 +23,8 @@ public class NewsService {
     @Value("${news.api.key:}")
     private String apiKey;
 
-    private final RestTemplate restTemplate = createRestTemplate();
+    private final RestTemplate restTemplate = new RestTemplate();
     private static final String NEWS_URL = "https://newsapi.org/v2/top-headlines?category=business&country=in&apiKey=";
-
-    private static RestTemplate createRestTemplate() {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-        requestFactory.setReadTimeout(Duration.ofSeconds(5));
-        return new RestTemplate(requestFactory);
-    }
 
     public List<Map<String, String>> getLatestMarketNews() {
         try {
@@ -46,14 +35,7 @@ public class NewsService {
             // Secure XML parser against XXE vulnerabilities
             dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             DocumentBuilder db = dbf.newDocumentBuilder();
-            URLConnection connection = java.net.URI.create(rssUrl).toURL().openConnection();
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-            connection.setRequestProperty("User-Agent", "TradeFlow market news");
-            Document doc;
-            try (InputStream stream = connection.getInputStream()) {
-                doc = db.parse(stream);
-            }
+            Document doc = db.parse(java.net.URI.create(rssUrl).toURL().openStream());
             doc.getDocumentElement().normalize();
             
             NodeList nodeList = doc.getElementsByTagName("item");

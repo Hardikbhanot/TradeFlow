@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 const getSocketUrl = () => {
-    const apiBase = new URL(
-        import.meta.env.VITE_API_BASE_URL || window.location.origin,
-        window.location.origin
-    );
-    apiBase.protocol = apiBase.protocol === 'https:' ? 'https:' : 'http:';
-    return new URL('/api/v1/market/ws', apiBase).toString();
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    // Remove trailing slash if present
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    return `${cleanBaseUrl}/api/v1/market/ws`;
 };
 export const useWebSocket = (userId) => {
     const [marketData, setMarketData] = useState({});
@@ -29,7 +27,7 @@ export const useWebSocket = (userId) => {
             // 1. Subscribe to Live Market Data
             client.subscribe('/topic/market-data', (message) => {
                 const data = JSON.parse(message.body);
-                setMarketData(previous => ({ ...previous, ...data }));
+                setMarketData(data);
             });
 
             // 2. Subscribe to Personal Order Updates

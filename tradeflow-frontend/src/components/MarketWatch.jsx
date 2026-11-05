@@ -8,7 +8,7 @@ export default function MarketWatch() {
     useEffect(() => {
         const fetchAlerts = async () => {
             try {
-                const res = await api.get('/api/v1/market/news', { timeout: 12000 });
+                const res = await api.get('/api/v1/market/news');
                 // Use the first 2 as 'Alerts' for the compact Market Watch section
                 setAlerts(res.data.slice(0, 2).map((item, idx) => ({
                     id: idx,
@@ -17,7 +17,6 @@ export default function MarketWatch() {
                     time: item.time
                 })));
             } catch (err) {
-                console.error('Unable to load market alerts', err);
                 setAlerts([]);
             } finally {
                 setLoading(false);

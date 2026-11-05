@@ -1,12 +1,9 @@
 package com.tradeflow.market_service.controller;
 
 import com.tradeflow.market_service.dto.PriceHistoryPoint;
-import com.tradeflow.market_service.service.KiteTickerService;
 import com.tradeflow.market_service.service.MarketService;
 import com.tradeflow.market_service.service.NewsService;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -20,18 +17,15 @@ public class MarketController {
     private final NewsService newsService;
     private final com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService;
     private final com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService;
-    private final KiteTickerService kiteTickerService;
 
     public MarketController(MarketService marketService,
             NewsService newsService,
             com.tradeflow.market_service.service.UpStoxAuthService upStoxAuthService,
-            com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService,
-            KiteTickerService kiteTickerService) {
+            com.tradeflow.market_service.service.UpstoxInstrumentService upstoxInstrumentService) {
         this.marketService = marketService;
         this.newsService = newsService;
         this.upStoxAuthService = upStoxAuthService;
         this.upstoxInstrumentService = upstoxInstrumentService;
-        this.kiteTickerService = kiteTickerService;
     }
 
     @GetMapping("/news")
@@ -51,19 +45,6 @@ public class MarketController {
                 .filter(s -> !s.isEmpty())
                 .toList();
         return marketService.getBatchLivePrices(parsedSymbols);
-    }
-
-    @PostMapping("/subscriptions")
-    public List<String> subscribeToLivePrices(@RequestBody Map<String, List<String>> request) {
-        if (request == null || request.get("symbols") == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A symbols list is required.");
-        }
-        return kiteTickerService.subscribeSymbols(request.get("symbols"));
-    }
-
-    @GetMapping("/stream/status")
-    public Map<String, Object> getLiveStreamStatus() {
-        return kiteTickerService.getStreamStatus();
     }
 
     @GetMapping("/history/{symbol}")

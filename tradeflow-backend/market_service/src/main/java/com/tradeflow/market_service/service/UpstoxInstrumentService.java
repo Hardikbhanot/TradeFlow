@@ -26,8 +26,6 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.Optional;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
@@ -122,7 +120,7 @@ public class UpstoxInstrumentService {
      * and maps Every NSE Trading Symbol to its ISIN Instrument Key in Redis.
      */
     @EventListener(ApplicationReadyEvent.class)
-    @org.springframework.scheduling.annotation.Scheduled(cron = "0 35 8 * * *", zone = "Asia/Kolkata")
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 6 * * *", zone = "Asia/Kolkata")
     public void fetchAndCacheInstruments() {
         log.info("🚀 Starting download of Upstox NSE Instruments CSV...");
 
@@ -142,7 +140,6 @@ public class UpstoxInstrumentService {
                         .parse(reader);
 
                 Map<String, String> instrumentMap = new HashMap<>();
-                Set<String> equitySymbols = new java.util.HashSet<>();
                 int count = 0;
 
                 for (CSVRecord record : records) {
@@ -158,21 +155,22 @@ public class UpstoxInstrumentService {
                         
                         // If it's pure NSE Equity, add to our quick-search Set
                         if (instrumentKey.startsWith("NSE_EQ|")) {
-                            equitySymbols.add(symbol);
+                            redisTemplate.opsForSet().add(EQUITY_SET_KEY, symbol);
                         }
                         count++;
                     }
 
                     // Flush to Redis in batches of 10,000 to prevent memory pressure
                     if (count % 10000 == 0) {
-                        flushInstrumentBatch(instrumentMap, equitySymbols);
+                        redisTemplate.opsForHash().putAll(REDIS_HASH_KEY, instrumentMap);
+                        instrumentMap.clear();
                         log.info("📥 Loaded {} instruments into Redis...", count);
                     }
                 }
 
                 // Flush remaining
-                if (!instrumentMap.isEmpty() || !equitySymbols.isEmpty()) {
-                    flushInstrumentBatch(instrumentMap, equitySymbols);
+                if (!instrumentMap.isEmpty()) {
+                    redisTemplate.opsForHash().putAll(REDIS_HASH_KEY, instrumentMap);
                     log.info("📥 Loaded final batch. Total instruments: {}", count);
                 }
 
@@ -183,29 +181,18 @@ public class UpstoxInstrumentService {
         }
     }
 
-    private void flushInstrumentBatch(Map<String, String> instrumentMap, Set<String> equitySymbols) {
-        if (!instrumentMap.isEmpty()) {
-            redisTemplate.opsForHash().putAll(REDIS_HASH_KEY, instrumentMap);
-            instrumentMap.clear();
-        }
-        if (!equitySymbols.isEmpty()) {
-            redisTemplate.opsForSet().add(EQUITY_SET_KEY, equitySymbols.toArray());
-            equitySymbols.clear();
-        }
-    }
-
     public List<String> searchInstruments(String query) {
-        if (query == null || query.trim().length() < 2) {
+        if (query == null || query.length() < 2) {
             return new ArrayList<>();
         }
 
-        String searchPattern = query.trim().toUpperCase() + "*";
-        Set<String> results = new TreeSet<>();
+        String searchPattern = query.toUpperCase() + "*";
+        List<String> results = new ArrayList<>();
 
         // 1. Search in Equity symbols first (Highest priority)
-        ScanOptions equityOptions = ScanOptions.scanOptions().match(searchPattern).count(1000).build();
+        ScanOptions equityOptions = ScanOptions.scanOptions().match(searchPattern).count(500).build();
         try (Cursor<Object> cursor = redisTemplate.opsForSet().scan(EQUITY_SET_KEY, equityOptions)) {
-            while (cursor.hasNext()) {
+            while (cursor.hasNext() && results.size() < 15) {
                 results.add((String) cursor.next());
             }
         } catch (Exception e) {
@@ -214,24 +201,25 @@ public class UpstoxInstrumentService {
 
         // 2. If we don't have enough results, check the full instrument hash (e.g. for FOs/Options)
         if (results.size() < 10) {
-            ScanOptions fullOptions = ScanOptions.scanOptions().match(searchPattern).count(1000).build();
+            ScanOptions fullOptions = ScanOptions.scanOptions().match(searchPattern).count(500).build();
             try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan(REDIS_HASH_KEY, fullOptions)) {
-                while (cursor.hasNext()) {
+                while (cursor.hasNext() && results.size() < 25) {
                     String key = (String) cursor.next().getKey();
-                    results.add(key);
+                    if (!results.contains(key)) {
+                        results.add(key);
+                    }
                 }
             } catch (Exception e) {
                 log.error("Error searching full instruments hash: {}", e.getMessage());
             }
         }
 
-        // Sort all prefix matches before limiting; Redis SCAN iteration order is arbitrary.
-        List<String> sortedResults = new ArrayList<>(results);
-        sortedResults.sort((a, b) -> {
-            if (a.length() != b.length()) return Integer.compare(a.length(), b.length());
+        // 3. Sort by length then alphabetical to keep short symbols (base stocks) at top
+        results.sort((a, b) -> {
+            if (a.length() != b.length()) return a.length() - b.length();
             return a.compareTo(b);
         });
 
-        return sortedResults.stream().limit(15).collect(Collectors.toList());
+        return results.stream().limit(15).collect(Collectors.toList());
     }
 }
